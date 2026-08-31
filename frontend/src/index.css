@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+    --font-sans: "Plus Jakarta Sans", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-serif: "DM Serif Display", Georgia, serif;
+}
+
+:root {
+    --tt-ink: #13231B;
+    --tt-ink-soft: #405148;
+    --tt-brand: #2F6B57;
+    --tt-brand-strong: #1F4D3E;
+    --tt-sage: #DCE9E0;
+    --tt-canvas: #F6F7F2;
+    --tt-surface: #FFFFFF;
+    --tt-accent: #E8795B;
+    --tt-accent-soft: #FBE9E4;
+    --tt-gold: #E5B95D;
+    --tt-border: #DDE4DE;
+    --tt-danger: #B84A4A;
+    --tt-danger-soft: #FBEAEA;
+    color: var(--tt-ink);
+    background: var(--tt-canvas);
+    font-family: "Plus Jakarta Sans", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; background: var(--tt-canvas); }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--tt-canvas); color: var(--tt-ink); }
+.font-serif { font-family: "DM Serif Display", Georgia, serif !important; font-weight: 400 !important; }
+.font-sans { font-family: "Plus Jakarta Sans", Inter, system-ui, sans-serif !important; }
+button, a, input, select, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled), a { cursor: pointer; }
+::selection { color: var(--tt-ink); background: #F2C5B9; }
+:where(a, button, input, select, textarea, [tabindex]):focus-visible { outline: 3px solid var(--tt-accent); outline-offset: 3px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--tt-canvas); }
+::-webkit-scrollbar-thumb { background: #A9B7AE; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--tt-brand); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.pb-safe { padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
+
+.tt-eyebrow { display:inline-flex; align-items:center; gap:.5rem; color:var(--tt-brand); font-size:.72rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+.tt-panel { border:1px solid var(--tt-border); background:var(--tt-surface); border-radius:1.25rem; box-shadow:0 1px 2px rgba(19,35,27,.04); }
+.tt-primary { display:inline-flex; min-height:46px; align-items:center; justify-content:center; gap:.55rem; border-radius:.85rem; background:var(--tt-brand); color:#fff; padding:0 1.1rem; font-weight:800; transition:transform 160ms ease, background 160ms ease, box-shadow 160ms ease; box-shadow:0 8px 22px rgba(47,107,87,.18); }
+.tt-primary:hover { background:var(--tt-brand-strong); box-shadow:0 10px 26px rgba(31,77,62,.22); }
+.tt-primary:active { transform:translateY(1px); }
+.tt-secondary { display:inline-flex; min-height:46px; align-items:center; justify-content:center; gap:.55rem; border:1px solid var(--tt-border); border-radius:.85rem; background:#fff; color:var(--tt-ink); padding:0 1.1rem; font-weight:800; transition:border-color 160ms ease, background 160ms ease; }
+.tt-secondary:hover { border-color:#A9B7AE; background:#FAFBF8; }
+.tt-kicker { color:var(--tt-brand); font-size:.72rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+.tt-section-title { font-family:"DM Serif Display", Georgia, serif; font-size:clamp(2rem,4vw,3.75rem); line-height:1.02; letter-spacing:-.02em; color:var(--tt-ink); }
+.tt-muted { color:#66756D; }
+
+@media (max-width: 767px) { input, select, textarea, button { font-size:16px; } }

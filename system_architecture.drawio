@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-08-28T07:32:00.000Z" agent="Antigravity" version="24.7.17" type="device">
+  <diagram id="system-architecture" name="TimmyTails System Architecture">
+    <mxGraphModel dx="1600" dy="1180" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1180" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ================================================================ -->
+        <!--  TITLE                                                           -->
+        <!-- ================================================================ -->
+        <mxCell id="title" value="&lt;b style=&quot;font-size:20px; letter-spacing:1px;&quot;&gt;TIMMYTAILS — SYSTEM ARCHITECTURE&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:11px;&quot;&gt;AI-Assisted Pet Grooming Appointment System&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="400" y="10" width="800" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  ACTORS                                                          -->
+        <!-- ================================================================ -->
+        <mxCell id="user_owner" value="&lt;b style=&quot;font-size:11px;&quot;&gt;Pet Owner&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:8px;&quot;&gt;(Customer)&lt;/span&gt;" style="shape=mxgraph.basic.person;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="450" y="65" width="60" height="65" as="geometry"/>
+        </mxCell>
+        <mxCell id="user_admin" value="&lt;b style=&quot;font-size:11px;&quot;&gt;Admin&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:8px;&quot;&gt;(Groomer)&lt;/span&gt;" style="shape=mxgraph.basic.person;whiteSpace=wrap;html=1;fillColor=#D9D9D9;strokeColor=#000000;fontColor=#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="65" width="60" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  SERVER / CLOUD INFRASTRUCTURE (outermost container)             -->
+        <!-- ================================================================ -->
+        <mxCell id="cloud" value="&lt;b style=&quot;font-size:15px; letter-spacing:1px;&quot;&gt;☁  SERVER / CLOUD INFRASTRUCTURE&lt;/b&gt;&lt;br/&gt;&lt;i style=&quot;font-size:10px;&quot;&gt;Vercel (Frontend) &amp;amp; Render (Backend) — Hosts and runs the application&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=3;verticalAlign=top;spacingTop=8;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="80" y="155" width="1440" height="970" as="geometry"/>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  CROSS-CUTTING SECURITY CONTROLS (vertical bar, left side)       -->
+        <!-- ================================================================ -->
+        <mxCell id="security" value="&lt;b style=&quot;font-size:11px;&quot;&gt;CROSS-CUTTING&lt;br/&gt;SECURITY&lt;br/&gt;CONTROLS&lt;/b&gt;&lt;br/&gt;&lt;i style=&quot;font-size:8px;&quot;&gt;Protects users,&lt;br/&gt;data, and system&lt;br/&gt;resources&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#000000;fontColor=#000000;strokeWidth=2;verticalAlign=top;spacingTop=8;arcSize=4;dashed=1;dashPattern=10 5;" vertex="1" parent="1">
+          <mxGeometry x="100" y="215" width="155" height="895" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="sec_jwt" value="&lt;b style=&quot;font-size:9px;&quot;&gt;JWT Authentication&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Token-based sessions&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="110" y="335" width="135" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="sec_rbac" value="&lt;b style=&quot;font-size:9px;&quot;&gt;RBAC&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Role-based access&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="110" y="440" width="135" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="sec_cors" value="&lt;b style=&quot;font-size:9px;&quot;&gt;CORS&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Origin whitelisting&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="110" y="545" width="135" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="sec_rate" value="&lt;b style=&quot;font-size:9px;&quot;&gt;Rate Limiting&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Abuse prevention&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="110" y="650" width="135" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="sec_valid" value="&lt;b style=&quot;font-size:9px;&quot;&gt;Input Validation&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;express-validator&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="110" y="755" width="135" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="sec_otp" value="&lt;b style=&quot;font-size:9px;&quot;&gt;OTP Verification&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Phone / Email codes&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="110" y="860" width="135" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  FRONTEND — React 18 + Vite on Vercel                            -->
+        <!-- ================================================================ -->
+        <mxCell id="fe_box" value="&lt;b style=&quot;font-size:14px; letter-spacing:0.5px;&quot;&gt;FRONTEND&lt;/b&gt;&lt;br/&gt;&lt;i style=&quot;font-size:10px;&quot;&gt;What the users see and interact with&lt;/i&gt;&lt;br/&gt;&lt;span style=&quot;font-size:9px;&quot;&gt;React 18 + Vite · Deployed on Vercel&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=2;verticalAlign=top;spacingTop=6;arcSize=5;" vertex="1" parent="1">
+          <mxGeometry x="280" y="260" width="1210" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- Frontend: Pages -->
+        <mxCell id="fe_pages" value="&lt;b style=&quot;font-size:10px;&quot;&gt;Pages&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:8px;&quot;&gt;Home · Services · Booking · Dashboard · My Pets&lt;br/&gt;Appointments · Profile · Admin · Login / Signup&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="300" y="310" width="335" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Frontend: Shared Components -->
+        <mxCell id="fe_components" value="&lt;b style=&quot;font-size:10px;&quot;&gt;Shared Components&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:8px;&quot;&gt;Header · Footer · BottomNav · Calendar&lt;br/&gt;Modals · Notifications · Carousels&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="655" y="310" width="260" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Frontend: State Management -->
+        <mxCell id="fe_state" value="&lt;b style=&quot;font-size:10px;&quot;&gt;State Management&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:8px;&quot;&gt;AuthContext · React Hooks&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="935" y="310" width="160" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Frontend: Routing -->
+        <mxCell id="fe_routing" value="&lt;b style=&quot;font-size:10px;&quot;&gt;Routing&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:8px;&quot;&gt;React Router&lt;br/&gt;Protected / Guest Routes&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1115" y="310" width="155" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Frontend: Features -->
+        <mxCell id="fe_features" value="&lt;b style=&quot;font-size:10px;&quot;&gt;Features&lt;/b&gt;  &lt;span style=&quot;font-size:8px;&quot;&gt;AI Grooming Preview · Booking Flow&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="300" y="390" width="280" height="38" as="geometry"/>
+        </mxCell>
+
+        <!-- Frontend: API Utilities -->
+        <mxCell id="fe_utils" value="&lt;b style=&quot;font-size:10px;&quot;&gt;API Utilities&lt;/b&gt;  &lt;span style=&quot;font-size:8px;&quot;&gt;Fetch Wrappers · Backend Warmup&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="600" y="390" width="280" height="38" as="geometry"/>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  REST API LAYER                                                   -->
+        <!-- ================================================================ -->
+        <mxCell id="api_box" value="&lt;b style=&quot;font-size:14px; letter-spacing:0.5px;&quot;&gt;REST API LAYER&lt;/b&gt;&lt;br/&gt;&lt;i style=&quot;font-size:10px;&quot;&gt;Allows the frontend and backend, or different systems, to communicate&lt;/i&gt;&lt;br/&gt;&lt;span style=&quot;font-size:9px;&quot;&gt;Express.js Route Handlers · JSON over HTTPS&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0E0E0;strokeColor=#000000;fontColor=#000000;strokeWidth=2;verticalAlign=top;spacingTop=6;arcSize=5;" vertex="1" parent="1">
+          <mxGeometry x="280" y="475" width="1210" height="105" as="geometry"/>
+        </mxCell>
+
+        <!-- API Endpoints -->
+        <mxCell id="api_auth" value="&lt;b style=&quot;font-size:9px;&quot;&gt;/api/auth&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Login · Signup · OAuth&lt;br/&gt;OTP · Password Reset&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="298" y="525" width="135" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="api_appts" value="&lt;b style=&quot;font-size:9px;&quot;&gt;/api/appointments&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;CRUD · Schedule&lt;br/&gt;Reschedule · Cancel&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="455" y="525" width="148" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="api_pets" value="&lt;b style=&quot;font-size:9px;&quot;&gt;/api/pets&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Add · Edit&lt;br/&gt;Delete Pets&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="625" y="525" width="108" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="api_ai" value="&lt;b style=&quot;font-size:9px;&quot;&gt;/api/ai&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;AI Preview&lt;br/&gt;Image Gen · Verification&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="755" y="525" width="130" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="api_admin" value="&lt;b style=&quot;font-size:9px;&quot;&gt;/api/admin&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;User Mgmt&lt;br/&gt;Booking Mgmt&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D9D9D9;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="907" y="525" width="118" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="api_notif" value="&lt;b style=&quot;font-size:9px;&quot;&gt;/api/notifications&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Alerts · Read Status&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1047" y="525" width="130" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="api_contact" value="&lt;b style=&quot;font-size:9px;&quot;&gt;/api/contact&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Contact Form&lt;br/&gt;Submissions&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1199" y="525" width="115" height="48" as="geometry"/>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  BACKEND — Node.js + Express.js on Render                         -->
+        <!-- ================================================================ -->
+        <mxCell id="be_box" value="&lt;b style=&quot;font-size:14px; letter-spacing:0.5px;&quot;&gt;BACKEND&lt;/b&gt;&lt;br/&gt;&lt;i style=&quot;font-size:10px;&quot;&gt;Handles the system's logic and processes&lt;/i&gt;&lt;br/&gt;&lt;span style=&quot;font-size:9px;&quot;&gt;Node.js + Express.js · Deployed on Render&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=2;verticalAlign=top;spacingTop=6;arcSize=5;" vertex="1" parent="1">
+          <mxGeometry x="280" y="615" width="1210" height="310" as="geometry"/>
+        </mxCell>
+
+        <!-- Backend: Services container -->
+        <mxCell id="be_services" value="&lt;b style=&quot;font-size:11px;&quot;&gt;Services&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;verticalAlign=top;spacingTop=4;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="300" y="670" width="420" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="be_mailer" value="&lt;b style=&quot;font-size:9px;&quot;&gt;Mailer Service&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Nodemailer&lt;br/&gt;SMTP Templates&lt;br/&gt;Booking Confirmations&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="310" y="700" width="125" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="be_sms" value="&lt;b style=&quot;font-size:9px;&quot;&gt;SMS Service&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;TextBee API&lt;br/&gt;OTP Delivery&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="445" y="700" width="115" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="be_account" value="&lt;b style=&quot;font-size:9px;&quot;&gt;Account Status&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Activation&lt;br/&gt;Deactivation&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="570" y="700" width="135" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Backend: Configuration & Environment container -->
+        <mxCell id="be_config" value="&lt;b style=&quot;font-size:11px;&quot;&gt;Configuration &amp;amp; Environment&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;verticalAlign=top;spacingTop=4;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="740" y="670" width="720" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="be_db_conn" value="&lt;b style=&quot;font-size:9px;&quot;&gt;DB Connection&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Mongoose&lt;br/&gt;config/db.js&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="755" y="700" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="be_groom_svc" value="&lt;b style=&quot;font-size:9px;&quot;&gt;Grooming Services&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Pricing · Slots&lt;br/&gt;config/services.js&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="880" y="700" width="130" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="be_season" value="&lt;b style=&quot;font-size:9px;&quot;&gt;PH Season Logic&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Holiday / Weather&lt;br/&gt;Scheduling Rules&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1025" y="700" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="be_photo" value="&lt;b style=&quot;font-size:9px;&quot;&gt;Photo Verification&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;AI Policy Rules&lt;br/&gt;Fidelity Checks&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="700" width="120" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  AI GROOMING PREVIEW WORKFLOW (inside Backend)                     -->
+        <!-- ================================================================ -->
+        <mxCell id="ai_flow" value="&lt;b style=&quot;font-size:11px; letter-spacing:0.5px;&quot;&gt;AI GROOMING PREVIEW WORKFLOW&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;verticalAlign=top;spacingTop=5;arcSize=6;dashed=1;dashPattern=6 3;" vertex="1" parent="1">
+          <mxGeometry x="300" y="790" width="1160" height="115" as="geometry"/>
+        </mxCell>
+
+        <!-- AI Workflow Step 1 -->
+        <mxCell id="ai_1" value="&lt;b style=&quot;font-size:8px;&quot;&gt;Upload&lt;br/&gt;Pet Image&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="318" y="828" width="110" height="50" as="geometry"/>
+        </mxCell>
+        <!-- AI Workflow Step 2 -->
+        <mxCell id="ai_2" value="&lt;b style=&quot;font-size:8px;&quot;&gt;Image&lt;br/&gt;Verification&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="463" y="828" width="115" height="50" as="geometry"/>
+        </mxCell>
+        <!-- AI Workflow Step 3 -->
+        <mxCell id="ai_3" value="&lt;b style=&quot;font-size:8px;&quot;&gt;Selected&lt;br/&gt;Grooming Style&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="613" y="828" width="125" height="50" as="geometry"/>
+        </mxCell>
+        <!-- AI Workflow Step 4 (External — gray) -->
+        <mxCell id="ai_4" value="&lt;b style=&quot;font-size:8px;&quot;&gt;Gemini AI&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:6px;&quot;&gt;(External API)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D9D9D9;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="773" y="828" width="105" height="50" as="geometry"/>
+        </mxCell>
+        <!-- AI Workflow Step 5 -->
+        <mxCell id="ai_5" value="&lt;b style=&quot;font-size:8px;&quot;&gt;Generated Pet&lt;br/&gt;Grooming Preview&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="913" y="828" width="135" height="50" as="geometry"/>
+        </mxCell>
+        <!-- AI Workflow Step 6 (Database — cylinder hint) -->
+        <mxCell id="ai_6" value="&lt;b style=&quot;font-size:8px;&quot;&gt;AI Previews&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:6px;&quot;&gt;(MongoDB)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1083" y="828" width="110" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- AI Workflow Arrows -->
+        <mxCell id="e_ai12" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="ai_1" target="ai_2" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_ai23" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="ai_2" target="ai_3" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_ai34" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="ai_3" target="ai_4" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_ai45" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="ai_4" target="ai_5" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_ai56" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="ai_5" target="ai_6" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  DATABASE — MongoDB Atlas                                         -->
+        <!-- ================================================================ -->
+        <mxCell id="db_box" value="&lt;b style=&quot;font-size:14px; letter-spacing:0.5px;&quot;&gt;DATABASE&lt;/b&gt;&lt;br/&gt;&lt;i style=&quot;font-size:10px;&quot;&gt;Stores information and records&lt;/i&gt;&lt;br/&gt;&lt;span style=&quot;font-size:9px;&quot;&gt;MongoDB Atlas · Mongoose ODM&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=2;verticalAlign=top;spacingTop=6;arcSize=5;" vertex="1" parent="1">
+          <mxGeometry x="280" y="960" width="550" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- Database Collections — Row 1 -->
+        <mxCell id="db_users" value="&lt;b style=&quot;font-size:8px;&quot;&gt;Users&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="298" y="1012" width="68" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="db_pets" value="&lt;b style=&quot;font-size:8px;&quot;&gt;Pets&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="378" y="1012" width="58" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="db_appts" value="&lt;b style=&quot;font-size:8px;&quot;&gt;Appointments&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="448" y="1012" width="85" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="db_notif" value="&lt;b style=&quot;font-size:8px;&quot;&gt;Notifications&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="545" y="1012" width="80" height="36" as="geometry"/>
+        </mxCell>
+
+        <!-- Database Collections — Row 2 -->
+        <mxCell id="db_contacts" value="&lt;b style=&quot;font-size:8px;&quot;&gt;Contacts&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="298" y="1058" width="68" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="db_otp" value="&lt;b style=&quot;font-size:8px;&quot;&gt;OTP Requests&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="378" y="1058" width="82" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="db_ai" value="&lt;b style=&quot;font-size:8px;&quot;&gt;AI Previews&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="472" y="1058" width="78" height="36" as="geometry"/>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  EXTERNAL SERVICES                                                -->
+        <!-- ================================================================ -->
+        <mxCell id="ext_box" value="&lt;b style=&quot;font-size:13px; letter-spacing:0.5px;&quot;&gt;EXTERNAL SERVICES&lt;/b&gt;&lt;br/&gt;&lt;i style=&quot;font-size:9px;&quot;&gt;Third-party API integrations&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;strokeWidth=2;verticalAlign=top;spacingTop=6;arcSize=5;dashed=1;dashPattern=5 3;" vertex="1" parent="1">
+          <mxGeometry x="860" y="960" width="630" height="140" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ext_gemini" value="&lt;b style=&quot;font-size:9px;&quot;&gt;Google Gemini AI&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Image Generation&lt;br/&gt;Source Verification&lt;br/&gt;Fidelity Checks&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="878" y="1010" width="130" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_oauth" value="&lt;b style=&quot;font-size:9px;&quot;&gt;Google OAuth 2.0&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Social Login&lt;br/&gt;ID Token Verify&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1028" y="1010" width="120" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_sms" value="&lt;b style=&quot;font-size:9px;&quot;&gt;SMS / TextBee&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;SMS Gateway&lt;br/&gt;OTP Delivery&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1168" y="1010" width="115" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_imgkit" value="&lt;b style=&quot;font-size:9px;&quot;&gt;ImageKit&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:7px;&quot;&gt;Image Storage&lt;br/&gt;CDN · Optimization&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#000000;fontColor=#000000;strokeWidth=1.5;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1303" y="1010" width="115" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  MAIN DATA FLOW ARROWS                                            -->
+        <!-- ================================================================ -->
+
+        <!-- Pet Owner → Frontend -->
+        <mxCell id="e_owner_fe" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;curved=1;" edge="1" source="user_owner" target="fe_box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_owner_fe_lbl" value="&lt;i style=&quot;font-size:9px;&quot;&gt;browses / books&lt;/i&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#000000;labelBackgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="e_owner_fe">
+          <mxGeometry x="0.1" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- Admin → Frontend -->
+        <mxCell id="e_admin_fe" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.8;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;curved=1;" edge="1" source="user_admin" target="fe_box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_admin_fe_lbl" value="&lt;i style=&quot;font-size:9px;&quot;&gt;manages&lt;/i&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#000000;labelBackgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="e_admin_fe">
+          <mxGeometry x="0.1" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- Frontend ↔ REST API -->
+        <mxCell id="e_fe_api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;" edge="1" source="fe_box" target="api_box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_fe_api_lbl" value="&lt;span style=&quot;font-size:9px;&quot;&gt;HTTPS / JSON&lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#000000;labelBackgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="e_fe_api">
+          <mxGeometry relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- REST API ↔ Backend -->
+        <mxCell id="e_api_be" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;" edge="1" source="api_box" target="be_box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Backend ↔ Database -->
+        <mxCell id="e_be_db" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;" edge="1" source="be_box" target="db_box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_be_db_lbl" value="&lt;span style=&quot;font-size:9px;&quot;&gt;Mongoose ODM&lt;br/&gt;read / write&lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#000000;labelBackgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="e_be_db">
+          <mxGeometry relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- Backend ↔ External Services -->
+        <mxCell id="e_be_ext" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;" edge="1" source="be_box" target="ext_box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_be_ext_lbl" value="&lt;span style=&quot;font-size:9px;&quot;&gt;API calls&lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#000000;labelBackgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="e_be_ext">
+          <mxGeometry relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
