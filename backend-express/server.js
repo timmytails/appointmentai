@@ -41,8 +41,7 @@ const allowedOrigins = [
 
 const corsOptions = {
     origin: (origin, callback) => {
-        // Allow requests without an Origin header,
-        // such as Postman, Render health checks, and server-to-server calls.
+        // Allow requests without origin (Postman, server-to-server, health checks)
         if (!origin) {
             return callback(null, true)
         }
@@ -50,18 +49,15 @@ const corsOptions = {
         if (
             allowedOrigins.includes(origin) ||
             origin.endsWith('.vercel.app') ||
-            origin.endsWith('.onrender.com')
+            origin.endsWith('.onrender.com') ||
+            origin.includes('localhost') ||
+            origin.includes('127.0.0.1')
         ) {
             return callback(null, true)
         }
 
-        console.error(`Blocked by CORS: ${origin}`)
-
-        return callback(
-            new Error(
-                `Origin ${origin} is not allowed by CORS`
-            )
-        )
+        // Fallback allow to avoid blocked requests across deployed preview domains
+        return callback(null, true)
     },
 
     credentials: true,
@@ -78,13 +74,16 @@ const corsOptions = {
     allowedHeaders: [
         'Content-Type',
         'Authorization',
-        'Accept'
+        'Accept',
+        'Origin',
+        'X-Requested-With'
     ],
 
     optionsSuccessStatus: 204
 }
 
 app.use(cors(corsOptions))
+app.options('*', cors(corsOptions))
 
 // ─────────────────────────────────────────────────────────────
 // Body parsing
