@@ -6,7 +6,6 @@ import {
     Loader2,
     RefreshCw,
     Scissors,
-    Sparkles,
     SunMedium,
     Wind
 } from 'lucide-react'
@@ -123,7 +122,11 @@ export default function StylePicker({
                         const preview = stylePreviews[style.id] || { status: 'idle' }
                         const ready = preview.status === 'ready' && preview.generatedImage
                         const failed = preview.status === 'error'
-                        const canGenerate = photoReady && preview.status === 'idle' && !generationBusy
+                        const rawSuitability = style.breedSuitability || (Array.isArray(style.suitableBreeds) ? style.suitableBreeds.join(', ') : '')
+                        const cleanSuitability = String(rawSuitability || '')
+                            .replace(/^(Good for|Recommended for|Popular for|Ideal for|Perfect for)\s*/i, '')
+                            .trim()
+                        const seasonalReason = recommendation?.reason || (recommended ? style.seasonReasons?.[currentSeasonKey] : null)
 
                         return (
                             <Fragment key={style.id}>
@@ -151,7 +154,7 @@ export default function StylePicker({
                                     }`}
                                 >
                                     {/* Card Top Image / Preview Container */}
-                                    <span className='relative block w-full shrink-0 overflow-hidden border-b border-[#DDE4DE] bg-[#FAFBF8]'>
+                                    <span className='relative block w-full shrink-0 overflow-hidden border-b border-[#DDE4DE] bg-[#F9FAF8]'>
                                         {ready ? (
                                             <img
                                                 src={formatImageSrc(preview.generatedImage)}
@@ -159,35 +162,41 @@ export default function StylePicker({
                                                 className='h-40 sm:h-44 w-full object-cover transition-transform duration-500 group-hover:scale-105'
                                             />
                                         ) : (
-                                            <span className='grid h-40 sm:h-44 w-full place-items-center bg-[#FAFBF8] px-5 text-center text-[#2F6B57]'>
+                                            <span className='grid h-40 sm:h-44 w-full place-items-center bg-[#F9FAF8] px-4 text-center'>
                                                 {preview.status === 'generating' ? (
                                                     <span role='status'>
-                                                        <Loader2 size={26} className='mx-auto mb-2 animate-spin text-[#1F4D3E]' />
-                                                        <span className='text-xs font-semibold text-[#13231B]'>Generating on your pet…</span>
+                                                        <Loader2 size={22} className='mx-auto mb-2 animate-spin text-[#1F4D3E]' />
+                                                        <span className='text-xs font-semibold text-[#14231B] block'>Generating on your pet…</span>
+                                                        <span className='text-[11px] text-[#607368] mt-0.5 block'>Personalized preview in progress</span>
                                                     </span>
                                                 ) : failed ? (
                                                     <span>
-                                                        <RefreshCw size={24} className='mx-auto mb-2 text-[#9E3E3E]' />
-                                                        <span className='text-xs font-semibold text-[#9E3E3E]'>
+                                                        <RefreshCw size={20} className='mx-auto mb-1.5 text-[#9E3E3E]' />
+                                                        <span className='text-xs font-semibold text-[#9E3E3E] block'>
                                                             {generationBusy
-                                                                ? 'Another preview is generating…'
-                                                                : preview.error || 'Failed to generate. Select to retry.'}
+                                                                ? 'Preview waiting in queue…'
+                                                                : 'Preview unavailable'}
+                                                        </span>
+                                                        <span className='text-[11px] text-[#9E3E3E]/80 mt-0.5 block'>
+                                                            {generationBusy ? 'Starts automatically' : 'Tap card to retry'}
                                                         </span>
                                                     </span>
                                                 ) : (
                                                     <span className='flex flex-col items-center justify-center p-3'>
-                                                        <span className='grid h-11 w-11 place-items-center rounded-full bg-[#EDF3EE] text-[#1F4D3E] mx-auto mb-2 group-hover:scale-110 transition-transform'>
-                                                            <Sparkles size={20} />
-                                                        </span>
-                                                        <strong className='text-xs font-bold text-[#13231B]'>
+                                                        <ImageIcon size={22} className='text-[#8B9D92] mb-1.5 stroke-[1.5]' />
+                                                        <strong className='text-xs font-semibold text-[#14231B]'>
                                                             {!photoReady
-                                                                ? 'Upload pet photo first'
+                                                                ? 'Add pet photo above'
                                                                 : generationBusy
-                                                                    ? 'Queued after active preview'
+                                                                    ? 'Queued for preview'
                                                                     : 'Generate style preview'}
                                                         </strong>
-                                                        <span className='text-[10px] text-[#68776F] mt-0.5'>
-                                                            Personalized on your uploaded photo
+                                                        <span className='text-[11px] text-[#607368] mt-0.5'>
+                                                            {!photoReady
+                                                                ? 'Upload photo to see previews'
+                                                                : generationBusy
+                                                                    ? 'Generates after current card'
+                                                                    : 'Tap to see this cut on your pet'}
                                                         </span>
                                                     </span>
                                                 )}
@@ -197,18 +206,18 @@ export default function StylePicker({
                                         {/* Top Badges */}
                                         <span className='absolute left-3 top-3 flex flex-wrap gap-1.5'>
                                             {recommendation?.rank === 1 ? (
-                                                <span className='rounded-full bg-[#13231B] px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-[#F6F7F2] shadow-xs'>
+                                                <span className='rounded-md bg-[#13231B] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs'>
                                                     Top suggestion
                                                 </span>
                                             ) : recommended ? (
-                                                <span className='rounded-full bg-[#2F6B57] px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#F6F7F2] shadow-xs'>
+                                                <span className='rounded-md bg-[#2F6B57] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs'>
                                                     Seasonal pick
                                                 </span>
                                             ) : null}
                                         </span>
 
                                         {ready && (
-                                            <span className='absolute bottom-3 right-3 rounded-full bg-white/95 border border-[#DDE4DE] px-2.5 py-1 text-[9px] font-bold text-[#13231B] shadow-sm'>
+                                            <span className='absolute bottom-2.5 right-2.5 rounded bg-black/60 backdrop-blur-xs px-2 py-0.5 text-[10px] font-medium text-white shadow-xs'>
                                                 Your pet
                                             </span>
                                         )}
@@ -217,61 +226,44 @@ export default function StylePicker({
                                     {/* Card Content Area */}
                                     <span className='flex flex-1 flex-col justify-between p-4 sm:p-5'>
                                         <div>
-                                            {/* Style Title and Selection Badge */}
+                                            {/* Style Title and Breed Tag */}
                                             <span className='flex flex-wrap items-start justify-between gap-2'>
-                                                <span className='font-serif text-lg font-bold text-[#13231B] group-hover:text-[#1F4D3E] transition-colors'>
+                                                <span className='font-serif text-lg font-bold text-[#14231B] group-hover:text-[#1F4D3E] transition-colors'>
                                                     {style.name}
                                                 </span>
                                                 <span className='flex flex-wrap items-center gap-1.5'>
                                                     {isMatchForActiveBreed && breed && (
-                                                        <span className='inline-flex items-center gap-1 rounded-full bg-[#E4F1EA] px-2.5 py-0.5 text-[9px] font-bold text-[#1F4D3E] border border-[#2F6B57]/20'>
-                                                            ✨ Good for {breed}
+                                                        <span className='inline-flex items-center rounded-md bg-[#EBF3EE] px-2 py-0.5 text-[11px] font-semibold text-[#1E4B3D] border border-[#CCE0D3]'>
+                                                            Ideal for {breed}
                                                         </span>
                                                     )}
                                                     {selected && (
-                                                        <span className='inline-flex shrink-0 items-center gap-1 rounded-full bg-[#2F6B57] px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-[#F6F7F2] shadow-xs'>
-                                                            <Check size={11} />Selected
+                                                        <span className='inline-flex shrink-0 items-center gap-1 rounded bg-[#2F6B57] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs'>
+                                                            <Check size={11} /> Selected
                                                         </span>
                                                     )}
                                                 </span>
                                             </span>
 
                                             {/* Description */}
-                                            <span className='mt-1.5 block text-xs leading-relaxed text-[#405148]'>
+                                            <span className='mt-1.5 block text-xs leading-relaxed text-[#4A5D52]'>
                                                 {style.description}
                                             </span>
 
-                                            {/* Breed Suitability Callout */}
-                                            {(style.breedSuitability || style.suitableBreeds?.length) && (
-                                                <span className='mt-3 flex items-start gap-1.5 rounded-xl bg-[#FAFBF8] border border-[#E8EEE9] p-2.5 text-[11px] leading-relaxed text-[#1F4D3E]'>
-                                                    <span className='shrink-0 font-bold'>🐾 Good for:</span>
-                                                    <span className='font-medium text-[#405148]'>
-                                                        {isMatchForActiveBreed && breed ? (
-                                                            <span>
-                                                                <strong className='text-[#1F4D3E] font-bold'>{breed}</strong>
-                                                                {style.breedSuitability ? ` (${style.breedSuitability.replace(/^good for\s*/i, '')})` : ''}
-                                                            </span>
-                                                        ) : (
-                                                            style.breedSuitability || style.suitableBreeds.join(', ')
-                                                        )}
-                                                    </span>
+                                            {/* Breed Suitability */}
+                                            {cleanSuitability && (
+                                                <span className='mt-3 block text-xs leading-snug text-[#4A5D52]'>
+                                                    <strong className='font-semibold text-[#183023]'>Suited for:</strong> {cleanSuitability}
                                                 </span>
                                             )}
                                         </div>
 
-                                        {/* Footer Notes (Reason & Safety) */}
-                                        <div className='mt-3 space-y-1.5 pt-2 border-t border-[#DDE4DE]/60'>
-                                            {(recommendation?.reason || (recommended && style.seasonReasons?.[currentSeasonKey])) && (
-                                                <span className='block text-[11px] leading-5 text-[#2F6B57] font-medium'>
-                                                    🌿 {recommendation?.reason || style.seasonReasons?.[currentSeasonKey]}
-                                                </span>
-                                            )}
-                                            {style.coatSafety && (
-                                                <span className='block text-[11px] leading-5 text-[#68776F]'>
-                                                    🛡️ {style.coatSafety}
-                                                </span>
-                                            )}
-                                        </div>
+                                        {/* Seasonal Benefit */}
+                                        {seasonalReason && (
+                                            <div className='mt-3 rounded-lg bg-[#F3F7F4] border border-[#DEEAE2] px-3 py-2 text-[11px] leading-relaxed text-[#234D3B]'>
+                                                <span className='font-semibold text-[#143224]'>Seasonal benefit:</span> {seasonalReason}
+                                            </div>
+                                        )}
                                     </span>
                                 </button>
 
