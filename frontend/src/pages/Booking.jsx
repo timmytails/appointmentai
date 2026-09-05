@@ -1170,7 +1170,7 @@ export default function Booking() {
     }
 
     return (
-        <div className='min-h-screen bg-[#F6F7F2] px-4 py-6 pb-28 text-[#13231B] sm:px-6 sm:py-8 lg:px-8 lg:pb-12'>
+        <div className='min-h-screen bg-[#F6F7F2] px-4 py-6 pb-44 sm:px-6 sm:py-8 sm:pb-40 lg:px-8 lg:pb-12 text-[#13231B]'>
             <div className='mx-auto max-w-7xl'>
                 <div className='mb-7 rounded-[1.75rem] border border-[#DDE4DE] bg-white p-6 shadow-xs sm:p-8'>
                     <h1 className='font-serif text-3xl font-bold tracking-tight text-[#13231B] sm:text-4xl lg:text-5xl'>
@@ -1410,6 +1410,7 @@ export default function Booking() {
                                             onSelect={selectStyle}
                                             onRetry={retryStylePreview}
                                             petType={activePet?.type}
+                                            breed={activePet?.breed}
                                             photoReady={Boolean(photoDataUrl && consent)}
                                             loading={stylesLoading || recommendationsLoading}
                                             generationBusy={galleryGenerating}
@@ -1548,7 +1549,7 @@ export default function Booking() {
 
             {/* Mobile Floating Sticky Summary Bar (Visible only on steps 1..3) */}
             {mobileStep < 4 && (
-                <div className='fixed bottom-16 left-0 right-0 z-30 px-3 pb-2 pt-1 lg:hidden pointer-events-none'>
+                <div className='fixed bottom-[5.5rem] md:bottom-4 left-0 right-0 z-30 px-3 pb-1 pt-1 lg:hidden pointer-events-none'>
                     <div className='pointer-events-auto mx-auto flex max-w-lg items-center justify-between gap-3 rounded-xl border border-[#DDE4DE] bg-white/95 px-4 py-2.5 shadow-lg backdrop-blur-md'>
                         <div className='min-w-0 flex-1'>
                             <p className='text-[10px] font-bold uppercase tracking-wider text-[#2F6B57] truncate'>

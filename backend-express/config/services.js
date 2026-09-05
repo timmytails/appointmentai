@@ -61,6 +61,8 @@ const STYLE_OPTIONS = [
         description: 'A soft, even trim across the entire body for an adorable, low-maintenance look.',
         petTypes: ['dog'],
         coatTypes: ['long', 'medium', 'curly', 'wavy'],
+        suitableBreeds: ['Shih Tzu', 'Maltese', 'Poodle', 'Yorkshire Terrier', 'Bichon Frise', 'Pomeranian', 'Lhasa Apso', 'Cavalier King Charles', 'Maltipoo', 'Cockapoo'],
+        breedSuitability: 'Good for Shih Tzu, Maltese, Poodle, Yorkie & companion breeds',
         generationInstructions:
             'Create a clearly uniform medium-short coat across the body, legs, and chest. Shorten and neaten the ears, round the head softly, and keep the muzzle tidy without changing the dog’s facial anatomy.',
         verificationCriteria:
@@ -71,7 +73,7 @@ const STYLE_OPTIONS = [
             'wet-rainy': 'Simple to wash and dry after fun rainy day walks.'
         },
         seasonPriority: { 'hot-dry': 2, 'wet-rainy': 2 },
-        coatSafety: 'Keeps your pet looking tidy and cute with gentle coat protection.'
+        coatSafety: 'Popular for Shih Tzus, Malteses, and all friendly companion breeds.'
     },
     {
         id: 'teddy-bear-cut',
@@ -79,6 +81,8 @@ const STYLE_OPTIONS = [
         description: 'A plush, rounded face with soft cheeks for a cute teddy-bear silhouette.',
         petTypes: ['dog'],
         coatTypes: ['long', 'curly', 'wavy'],
+        suitableBreeds: ['Shih Tzu', 'Poodle', 'Bichon Frise', 'Pomeranian', 'Maltese', 'Maltipoo', 'Goldendoodle', 'Cavapoo'],
+        breedSuitability: 'Good for Shih Tzu, Poodle, Bichon & fluffy-faced breeds',
         generationInstructions:
             'Create an unmistakably round plush head with fuller rounded cheeks, a tidy rounded muzzle, softly rounded ears, and an even fluffy body and leg length.',
         verificationCriteria:
@@ -97,6 +101,8 @@ const STYLE_OPTIONS = [
         description: 'A light, breezy warm-weather trim to keep your dog comfortable all season long.',
         petTypes: ['dog'],
         coatTypes: ['long', 'medium', 'wavy'],
+        suitableBreeds: ['Shih Tzu', 'Golden Retriever', 'Labrador Retriever', 'Cocker Spaniel', 'Beagle', 'Pug', 'Mixed Breed'],
+        breedSuitability: 'Good for Shih Tzu, Retrievers, Spaniels & warm-weather active dogs',
         generationInstructions:
             'Create a noticeably shorter practical body and leg trim while preserving a natural, recognizable head and tail. Do not shave to the skin.',
         verificationCriteria:
@@ -114,6 +120,8 @@ const STYLE_OPTIONS = [
         description: 'A stylish Asian-inspired cut with a rounded head and fuller fluffy legs.',
         petTypes: ['dog'],
         coatTypes: ['long', 'curly', 'wavy'],
+        suitableBreeds: ['Shih Tzu', 'Poodle', 'Maltese', 'Bichon Frise', 'Yorkshire Terrier', 'Maltipoo'],
+        breedSuitability: 'Good for Shih Tzu, Toy Poodle, Maltese & stylish flared coats',
         generationInstructions:
             'Create a compact neatly trimmed body, a rounded sculpted head and muzzle, and visibly fuller column-shaped or flared legs.',
         verificationCriteria:
@@ -132,6 +140,8 @@ const STYLE_OPTIONS = [
         description: 'A classic salon cut with a smooth body and soft, velvety column legs.',
         petTypes: ['dog'],
         coatTypes: ['curly', 'wavy', 'long'],
+        suitableBreeds: ['Poodle', 'Bichon Frise', 'Goldendoodle', 'Maltipoo', 'Cockapoo', 'Portuguese Water Dog'],
+        breedSuitability: 'Good for Poodles, Bichon Frises & curly/wavy coat pets',
         generationInstructions:
             'Trim the body coat smooth while leaving fuller, expertly blended leg coat for a velvety lamb silhouette.',
         verificationCriteria:
@@ -150,6 +160,8 @@ const STYLE_OPTIONS = [
         description: 'A distinguished trim featuring a classic beard, tidy back, and handsome leg furnishings.',
         petTypes: ['dog'],
         coatTypes: ['wire', 'medium', 'long'],
+        suitableBreeds: ['Miniature Schnauzer', 'Standard Schnauzer', 'Giant Schnauzer', 'Scottish Terrier', 'Fox Terrier', 'Airedale Terrier', 'Wirehaired Dachshund'],
+        breedSuitability: 'Good for Schnauzers, Terriers & wire-haired dogs',
         generationInstructions:
             'Trim the back smooth, outline a clean chest apron, and preserve a distinctive beard, eyebrows, and leg coat.',
         verificationCriteria:
@@ -168,6 +180,8 @@ const STYLE_OPTIONS = [
         description: 'An outline tidy-up that preserves your dog’s natural coat beauty and length.',
         petTypes: ['dog'],
         coatTypes: ['double', 'long', 'medium', 'short'],
+        suitableBreeds: ['Golden Retriever', 'Siberian Husky', 'Pomeranian', 'German Shepherd', 'Corgi', 'Chow Chow', 'Samoyed', 'Border Collie'],
+        breedSuitability: 'Good for double-coated breeds like Huskies, Retrievers, Corgis & Pomeranians',
         generationInstructions:
             'Preserve almost all natural coat length and texture. Only clean the outline, remove visibly uneven wisps, and neaten paws.',
         verificationCriteria:
@@ -187,6 +201,8 @@ const STYLE_OPTIONS = [
         description: 'An even, plush trim for cats that keeps a soft medium length without a close clip.',
         petTypes: ['cat'],
         coatTypes: ['long', 'medium'],
+        suitableBreeds: ['Persian', 'Maine Coon', 'Ragdoll', 'British Longhair', 'Siberian Cat'],
+        breedSuitability: 'Good for Persian, Maine Coon, Ragdoll & medium-to-long haired cats',
         generationInstructions:
             'Create an even medium-short plush coat across the body while preserving a natural head and full tail.',
         verificationCriteria:
@@ -205,6 +221,8 @@ const STYLE_OPTIONS = [
         description: 'A soft, rounded trim with cute cheeks and a cozy, plush body outline.',
         petTypes: ['cat'],
         coatTypes: ['long', 'medium'],
+        suitableBreeds: ['Persian', 'Scottish Fold', 'British Shorthair', 'Ragdoll', 'Exotic Shorthair'],
+        breedSuitability: 'Good for Persian, Scottish Fold, British Shorthair & plush-coat cats',
         generationInstructions:
             'Create a plush rounded head with full cheeks, a softly rounded body outline, and neat paws.',
         verificationCriteria:
@@ -222,6 +240,8 @@ const STYLE_OPTIONS = [
         description: 'A majestic cat style with a close-trimmed body, fluffy mane, and cute tail tuft.',
         petTypes: ['cat'],
         coatTypes: ['long'],
+        suitableBreeds: ['Persian', 'Maine Coon', 'Ragdoll', 'Himalayan Cat', 'Norwegian Forest Cat'],
+        breedSuitability: 'Good for Persian, Maine Coon, Himalayan & long-haired cats in heat',
         generationInstructions:
             'Create a closely trimmed body while preserving a full mane around the head, fuller paws, and a tail-tip tuft.',
         verificationCriteria:
@@ -239,6 +259,8 @@ const STYLE_OPTIONS = [
         description: 'A focused hygiene trim around the belly, sanitary areas, and paw pads to keep cats clean and comfortable.',
         petTypes: ['cat'],
         coatTypes: ['short', 'medium', 'long'],
+        suitableBreeds: ['All Cat Breeds', 'Domestic Shorthair', 'Domestic Longhair', 'Persian', 'Siamese'],
+        breedSuitability: 'Good for all cat breeds, including domestic shorthairs & Persians',
         generationInstructions:
             'Preserve the cat’s full natural body coat and facial shape while neatening the paw pads and hygiene areas cleanly.',
         verificationCriteria:
