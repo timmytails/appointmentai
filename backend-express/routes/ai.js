@@ -40,7 +40,7 @@ const PHOTO_VERIFICATION_CACHE_TTL_MS = 60 * 60 * 1000
 const MAX_VERIFICATION_CACHE_ENTRIES = 100
 const photoVerificationCache = new Map()
 const DEFAULT_PREVIEW_VERSION =
-    '2026-08-pet-fidelity-v5-fast-species-guard'
+    '2026-09-pet-single-subject-v1'
 const MAX_GENERATED_IMAGE_BYTES = 8 * 1024 * 1024
 const PHOTO_VERIFICATION_TOKEN_TTL_SECONDS = 60 * 60
 
@@ -1033,14 +1033,16 @@ const buildStylePrompt = ({
     `Consider comfort and coat maintenance during the Philippine ${season.label}.`,
     'Preserve the exact same pet identity, facial structure, muzzle, ears, eye color, coat colors, markings, body proportions, pose, background, lighting, and camera angle.',
     'Change only the visible fur length, trim, outline, and grooming shape needed for the selected style.',
+    'CRITICAL COMPOSITION REQUIREMENT: Generate exactly ONE single photograph showing ONE single animal centered in the frame.',
+    'STRICT PROHIBITION: Do NOT create a side-by-side image, split screen, dual comparison panels, diptych, collage, dual-frame, montage, grid, twin animals, or duplicate pet. Under NO circumstances should there be two animals or two pictures side-by-side.',
+    'Keep the result a single cohesive, photorealistic, clean, and salon-quality portrait.',
     'Do not add clothing, bows, accessories, text, logos, watermarks, another animal, a person, or a different background.',
-    'Keep the result photorealistic and suitable as a before-and-after pet salon preview.',
     'Do not change the pet into a different breed or alter facial anatomy.',
     style.coatSafety
         ? `Coat-safety context: ${style.coatSafety}`
         : '',
     strictRetry
-        ? `Previous output did not pass verification. Preserve identity exactly and make these requested style features unmistakably visible: ${style.verificationCriteria}`
+        ? `CRITICAL RETRY: Output strictly 1 single picture of 1 single animal (no split screen, diptych, or duplicate animals). Preserve identity exactly and make these requested style features unmistakably visible: ${style.verificationCriteria}`
         : ''
 ]
     .filter(Boolean)
@@ -1167,6 +1169,7 @@ const verifyGeneratedPreview = async ({
         'Pass only when the generated result clearly depicts the same individual pet: the face, facial proportions, eye color, coat colors, distinctive markings, body proportions, pose, framing, and background remain consistent.',
         'Judge identity preservation and haircut accuracy separately. A generic tidy-up or a result that could equally represent another listed style does not satisfy the requested definition.',
         'The grooming style must be unmistakably visible, but the image must not introduce another animal, person, clothing, accessories, text, logos, or a replacement background.',
+        'MANDATORY SINGLE SUBJECT RULE: The generated preview must be 1 single picture containing only 1 animal. If the generated image contains a side-by-side comparison, split-screen, before-and-after panels, collage, duplicate pets, or multiple animals, singleAnimalOnly MUST be false and safeComposition MUST be false.',
         'Be conservative. If identity is uncertain, fail the comparison.'
     ].join(' ')
 
@@ -1205,7 +1208,7 @@ const verifyGeneratedPreview = async ({
             generationConfig: {
                 responseMimeType: 'application/json',
                 temperature: 0,
-                maxOutputTokens: 220,
+                maxOutputTokens: 240,
                 responseSchema: {
                     type: 'OBJECT',
                     properties: {
@@ -1219,6 +1222,9 @@ const verifyGeneratedPreview = async ({
                             type: 'BOOLEAN'
                         },
                         safeComposition: {
+                            type: 'BOOLEAN'
+                        },
+                        singleAnimalOnly: {
                             type: 'BOOLEAN'
                         },
                         detectedAnimal: {
@@ -1239,6 +1245,7 @@ const verifyGeneratedPreview = async ({
                         'styleApplied',
                         'styleDefinitionMatched',
                         'safeComposition',
+                        'singleAnimalOnly',
                         'detectedAnimal',
                         'reason'
                     ]
@@ -1274,12 +1281,14 @@ const verifyGeneratedPreview = async ({
         ? check.detectedAnimal
         : 'unclear'
 
+    const singleAnimalOnly = check.singleAnimalOnly !== false
     const normalized = {
         passed: Boolean(
             check.identityPreserved &&
             check.styleApplied &&
             check.styleDefinitionMatched &&
             check.safeComposition &&
+            singleAnimalOnly &&
             detectedAnimal === expectedPetType
         ),
         identityPreserved:
@@ -1289,11 +1298,14 @@ const verifyGeneratedPreview = async ({
         styleDefinitionMatched:
             Boolean(check.styleDefinitionMatched),
         safeComposition:
-            Boolean(check.safeComposition),
+            Boolean(check.safeComposition && singleAnimalOnly),
+        singleAnimalOnly,
         detectedAnimal,
         reason: String(
-            check.reason ||
-            'The generated result did not pass the pet-fidelity check.'
+            !singleAnimalOnly
+                ? 'The generated preview contained multiple images or duplicate pets instead of a single photo.'
+                : check.reason ||
+                  'The generated result did not pass the pet-fidelity check.'
         ).slice(0, 300),
         model: verificationModel
     }
@@ -1886,5 +1898,10 @@ router.post(
         }
     }
 )
+
+router._internal = {
+    buildStylePrompt,
+    DEFAULT_PREVIEW_VERSION
+}
 
 module.exports = router

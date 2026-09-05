@@ -4,7 +4,7 @@ const STORE_NAME = 'previews'
 export const SOURCE_PHOTO_POLICY_VERSION =
     'breed-species-v5-strict-check'
 
-const CACHE_VERSION = 'v7-fast-species-guard-cache'
+const CACHE_VERSION = 'v8-single-subject-cache'
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 const openDatabase = () => new Promise((resolve, reject) => {
