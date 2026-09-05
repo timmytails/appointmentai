@@ -59,3 +59,15 @@ test('sendAppointmentConfirmedEmail works for same-day booking', async () => {
 
     assert.ok(result, 'Result should be returned')
 })
+
+test('all route modules load cleanly without syntax or duplicate declaration errors', () => {
+    assert.doesNotThrow(() => {
+        require('../routes/appointments')
+        require('../routes/ai')
+        require('../routes/auth')
+        require('../routes/pets')
+        require('../routes/notifications')
+        require('../routes/contact')
+        require('../routes/admin')
+    })
+})

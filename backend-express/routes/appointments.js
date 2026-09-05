@@ -10,7 +10,8 @@ const User = require('../models/User')
 const {
     sendAppointmentCancelledEmail,
     sendAppointmentConfirmedEmail,
-    sendAppointmentRescheduledEmail
+    sendAppointmentRescheduledEmail,
+    sendAppointmentReminderTodayEmail
 } = require('../services/mailer')
 const { protect } = require('../middleware/auth')
 const {
@@ -22,10 +23,6 @@ const {
 const {
     SOURCE_PHOTO_POLICY_VERSION
 } = require('../config/photoVerificationPolicy')
-const {
-    sendAppointmentReminderTodayEmail,
-    sendAppointmentConfirmedEmail
-} = require('../services/mailer')
 
 const router = express.Router()
 
@@ -386,6 +383,9 @@ const findFixedSlot = (time) =>
 
 const autoCancelOverdueAppointments = async () => {
     try {
+        if (mongoose.connection.readyState !== 1) {
+            return
+        }
         const GRACE_PERIOD_MS = 10 * 60 * 1000 // 10 minutes grace period
         const nowMs = Date.now()
 
@@ -436,11 +436,11 @@ const autoCancelOverdueAppointments = async () => {
     }
 }
 
-// Run auto-cancel interval every 60 seconds
-setInterval(autoCancelOverdueAppointments, 60 * 1000)
-
 const sendTodayAppointmentReminders = async () => {
     try {
+        if (mongoose.connection.readyState !== 1) {
+            return
+        }
         const today = getManilaDateString()
         const pendingReminders = await Appointment.find({
             date: today,
@@ -478,9 +478,18 @@ const sendTodayAppointmentReminders = async () => {
     }
 }
 
-// Run reminder checker every 5 minutes (and once on startup)
-setInterval(sendTodayAppointmentReminders, 5 * 60 * 1000)
-setTimeout(sendTodayAppointmentReminders, 5000)
+if (process.env.NODE_ENV !== 'test') {
+    // Run auto-cancel interval every 60 seconds
+    const cancelInterval = setInterval(autoCancelOverdueAppointments, 60 * 1000)
+    if (cancelInterval.unref) cancelInterval.unref()
+
+    // Run reminder checker every 5 minutes (and once on startup)
+    const reminderInterval = setInterval(sendTodayAppointmentReminders, 5 * 60 * 1000)
+    if (reminderInterval.unref) reminderInterval.unref()
+
+    const reminderTimeout = setTimeout(sendTodayAppointmentReminders, 5000)
+    if (reminderTimeout.unref) reminderTimeout.unref()
+}
 
 
 const createSlotRows = (
