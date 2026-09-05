@@ -6,12 +6,6 @@ const Appointment = require('../models/Appointment')
 const AiPreview = require('../models/AiPreview')
 const Notification = require('../models/Notification')
 const Pet = require('../models/Pet')
-const User = require('../models/User')
-const {
-    sendAppointmentCancelledEmail,
-    sendAppointmentConfirmedEmail,
-    sendAppointmentRescheduledEmail
-} = require('../services/mailer')
 const { protect } = require('../middleware/auth')
 const {
     SERVICES,
@@ -22,6 +16,10 @@ const {
 const {
     SOURCE_PHOTO_POLICY_VERSION
 } = require('../config/photoVerificationPolicy')
+const {
+    sendAppointmentReminderTodayEmail,
+    sendAppointmentConfirmedEmail
+} = require('../services/mailer')
 
 const router = express.Router()
 
@@ -59,7 +57,7 @@ const MAX_BOOKING_DAYS = Math.max(
 
 const BOOKING_LEAD_MINUTES = Math.max(
     0,
-    Number(process.env.BOOKING_LEAD_MINUTES) || 60
+    Number(process.env.BOOKING_LEAD_MINUTES) || 30
 )
 
 const CLOSED_DAYS = new Set(
@@ -412,19 +410,6 @@ const autoCancelOverdueAppointments = async () => {
                     type: 'appointment-status',
                     appointment: appointment._id
                 }).catch(() => {})
-
-                // Send cancellation email for auto-cancelled appointment
-                User.findById(appointment.user).select('email firstName').then((u) => {
-                    const email = u?.email || appointment.contactEmail
-                    if (email) {
-                        sendAppointmentCancelledEmail({
-                            to: email,
-                            name: u?.firstName,
-                            appointment,
-                            reason: autoCancelReason
-                        }).catch((err) => console.error('Auto-cancel email dispatch error:', err.message))
-                    }
-                }).catch(() => {})
             }
         }
     } catch (error) {
@@ -434,6 +419,50 @@ const autoCancelOverdueAppointments = async () => {
 
 // Run auto-cancel interval every 60 seconds
 setInterval(autoCancelOverdueAppointments, 60 * 1000)
+
+const sendTodayAppointmentReminders = async () => {
+    try {
+        const today = getManilaDateString()
+        const pendingReminders = await Appointment.find({
+            date: today,
+            status: { $in: ['pending', 'confirmed'] },
+            reminderSentToday: { $ne: true }
+        }).populate('user', 'email firstName lastName')
+
+        for (const appointment of pendingReminders) {
+            const recipientEmail = appointment.ownerEmail || appointment.user?.email
+            const recipientName = appointment.ownerName || (appointment.user ? `${appointment.user.firstName} ${appointment.user.lastName}`.trim() : 'Valued Customer')
+
+            if (recipientEmail) {
+                await sendAppointmentReminderTodayEmail({
+                    to: recipientEmail,
+                    name: recipientName,
+                    appointment
+                }).catch((err) => console.error(`[REMINDER ERROR] Failed to send today reminder to ${recipientEmail}:`, err))
+            }
+
+            await Notification.create({
+                title: 'Appointment Today Reminder',
+                message: `Your appointment for ${appointment.petName} is scheduled for TODAY at ${appointment.time}. Please arrive 5-10 minutes before ${appointment.time} or your slot will be automatically cancelled and will open to others.`,
+                audience: 'user',
+                targetUser: appointment.user?._id || appointment.user,
+                type: 'appointment-status',
+                appointment: appointment._id
+            }).catch(() => {})
+
+            appointment.reminderSentToday = true
+            appointment.reminderSentAt = new Date()
+            await appointment.save()
+        }
+    } catch (error) {
+        console.error('Send today appointment reminders error:', error)
+    }
+}
+
+// Run reminder checker every 5 minutes (and once on startup)
+setInterval(sendTodayAppointmentReminders, 5 * 60 * 1000)
+setTimeout(sendTodayAppointmentReminders, 5000)
+
 
 const createSlotRows = (
     date,
@@ -904,18 +933,38 @@ router.post(
             .optional()
     ],
     async (req, res) => {
-        // Enforce the persisted account status. Notifications are communication only.
-        const freshUser = await User.findById(req.user._id).select('accountStatus statusReason')
-        const isBlockedOrBanned = freshUser && ['booking_blocked', 'banned'].includes(freshUser.accountStatus)
+        // Bulletproof Account Enforcement Check: Query DB for fresh User & recent enforcement notifications
+        const freshUser = await User.findById(req.user._id).select('accountStatus statusReason warningMessage')
+        const lastNotif = await Notification.findOne({ audience: 'user', targetUser: req.user._id }).sort({ createdAt: -1 })
+
+        let isBlockedOrBanned = false
+        let reasonMsg = ''
+
+        if (freshUser && ['booking_blocked', 'banned'].includes(freshUser.accountStatus)) {
+            isBlockedOrBanned = true
+            reasonMsg = freshUser.accountStatus === 'banned'
+                ? 'Your customer account has been permanently suspended by salon administration.'
+                : `Your booking access is currently blocked by salon administration. ${freshUser.statusReason || ''}`
+        }
+
+        if (!isBlockedOrBanned && lastNotif) {
+            const title = String(lastNotif.title || '').toLowerCase()
+            if (title.includes('banned') || title.includes('suspended') || title.includes('blocked')) {
+                isBlockedOrBanned = true
+                reasonMsg = `Your booking access is currently blocked by salon administration. ${lastNotif.message || ''}`
+
+                if (freshUser) {
+                    freshUser.accountStatus = title.includes('banned') ? 'banned' : 'booking_blocked'
+                    freshUser.statusReason = lastNotif.message || ''
+                    await freshUser.save()
+                }
+            }
+        }
 
         if (isBlockedOrBanned) {
-            const reasonMsg = freshUser.accountStatus === 'banned'
-                ? `Your customer account has been permanently suspended by administration. ${freshUser.statusReason || ''}`
-                : `Your booking access is currently blocked by administration. ${freshUser.statusReason || ''}`
-
             return res.status(403).json({
                 success: false,
-                message: reasonMsg.trim()
+                message: reasonMsg
             })
         }
 
@@ -1028,7 +1077,7 @@ router.post(
                 .json({
                     success: false,
                     message:
-                        'Select a future time slot with enough booking notice'
+                        `This time slot has already passed or requires at least ${BOOKING_LEAD_MINUTES} minutes advance booking notice.`
                 })
         }
 
@@ -1419,24 +1468,56 @@ router.post(
                 await previewRecord.save()
             }
 
+            const isAppointmentToday = appointment.date === getManilaDateString()
+            const recipientEmail = appointment.ownerEmail || req.user.email
+            const recipientName = appointment.ownerName || `${req.user.firstName} ${req.user.lastName}`.trim()
+
+            if (isAppointmentToday) {
+                // If booked today, instantly mark reminder sent and dispatch today's reminder email & notification
+                appointment.reminderSentToday = true
+                appointment.reminderSentAt = new Date()
+                await appointment.save()
+
+                if (recipientEmail) {
+                    sendAppointmentReminderTodayEmail({
+                        to: recipientEmail,
+                        name: recipientName,
+                        appointment
+                    }).catch((err) => console.error('[MAILER] Immediate today reminder failed:', err))
+
+                    sendAppointmentConfirmedEmail({
+                        to: recipientEmail,
+                        name: recipientName,
+                        appointment,
+                        isToday: true
+                    }).catch((err) => console.error('[MAILER] Booking confirmation email failed:', err))
+                }
+
+                await Notification.create({
+                    title: 'Appointment Today Reminder',
+                    message: `Your appointment for ${appointment.petName} is scheduled for TODAY at ${appointment.time}. Please arrive 5-10 minutes before ${appointment.time} or your slot will be automatically cancelled and will open to others.`,
+                    audience: 'user',
+                    targetUser: req.user._id,
+                    type: 'appointment-status',
+                    appointment: appointment._id
+                }).catch(() => {})
+            } else {
+                if (recipientEmail) {
+                    sendAppointmentConfirmedEmail({
+                        to: recipientEmail,
+                        name: recipientName,
+                        appointment,
+                        isToday: false
+                    }).catch((err) => console.error('[MAILER] Booking confirmation email failed:', err))
+                }
+            }
+
             const appointmentResponse =
                 appointment.toObject()
 
             delete appointmentResponse.aiPreviewImage
             delete appointmentResponse.aiPreviewSourceHash
             delete appointmentResponse.aiPreviewFidelityCheck
-
-            // Send Booking Confirmation Email
-            const customerEmail = appointment.ownerEmail || req.user?.email
-            if (customerEmail) {
-                sendAppointmentConfirmedEmail({
-                    to: customerEmail,
-                    name: req.body.ownerName || req.user?.firstName,
-                    appointment
-                }).catch((emailErr) => {
-                    console.error('Booking confirmation email dispatch error:', emailErr.message)
-                })
-            }
 
             return res
                 .status(201)
@@ -1621,24 +1702,6 @@ router.delete(
                         : null
             })
 
-            // Send cancellation email to customer
-            try {
-                const targetUser = await User.findById(appointment.user).select('email firstName')
-                const customerEmail = targetUser?.email || appointment.contactEmail
-                if (customerEmail) {
-                    sendAppointmentCancelledEmail({
-                        to: customerEmail,
-                        name: targetUser?.firstName,
-                        appointment,
-                        reason: appointment.cancellationReason
-                    }).catch((emailErr) => {
-                        console.error('Cancellation email dispatch error:', emailErr.message)
-                    })
-                }
-            } catch (err) {
-                console.error('Error finding user for cancellation email:', err.message)
-            }
-
             return res.json({
                 success: true,
                 message:
@@ -1762,18 +1825,6 @@ router.patch(
                 appointment: appointment._id,
                 createdBy: isAdmin ? req.user._id : null
             })
-
-            // Send Reschedule Notification Email
-            const rescheduleEmail = appointment.ownerEmail || req.user?.email
-            if (rescheduleEmail) {
-                sendAppointmentRescheduledEmail({
-                    to: rescheduleEmail,
-                    name: appointment.ownerName || req.user?.firstName,
-                    appointment
-                }).catch((emailErr) => {
-                    console.error('Reschedule email dispatch error:', emailErr.message)
-                })
-            }
 
             return res.json({
                 success: true,

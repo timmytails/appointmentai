@@ -11,7 +11,7 @@ const {
     normalizeSourceModelTimeout
 } = require('../config/photoVerificationPolicy')
 
-test('classifies the image without revealing the selected profile species', () => {
+test('classifies the image without revealing the selected profile species when no pet is specified', () => {
     const prompt = buildPetPhotoClassificationPrompt()
 
     assert.equal(
@@ -19,10 +19,9 @@ test('classifies the image without revealing the selected profile species', () =
         false
     )
     assert.equal(
-        prompt.includes('registered or expected pet species'),
+        prompt.includes('expert animal species and pet breed verifier'),
         true
     )
-
 })
 
 test('rejects a clear dog photo when the selected profile is a cat', () => {

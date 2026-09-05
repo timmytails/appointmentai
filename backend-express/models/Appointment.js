@@ -174,6 +174,14 @@ const appointmentSchema = new mongoose.Schema(
         revenueRecordedAt: {
             type: Date,
             default: null
+        },
+        reminderSentToday: {
+            type: Boolean,
+            default: false
+        },
+        reminderSentAt: {
+            type: Date,
+            default: null
         }
     },
     { timestamps: true }
@@ -183,5 +191,6 @@ appointmentSchema.index({ startAt: 1, endAt: 1, status: 1 })
 appointmentSchema.index({ ownerEmail: 1 })
 appointmentSchema.index({ status: 1 })
 appointmentSchema.index({ revenueRecordedAt: 1 })
+appointmentSchema.index({ date: 1, reminderSentToday: 1, status: 1 })
 
 module.exports = mongoose.model('Appointment', appointmentSchema)

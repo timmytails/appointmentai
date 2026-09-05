@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
     AlertTriangle,
     Ban,
@@ -20,6 +20,7 @@ import {
     SOURCE_PHOTO_POLICY_VERSION,
     createPreviewCacheKey,
     getCachedPreview,
+    hashDataUrl,
     hashFile,
     saveCachedPreview
 } from '../utils/previewCache'
@@ -163,7 +164,6 @@ const runStyleQueue = async (items, worker) => {
 export default function Booking() {
     const { user, refreshUser } = useAuth()
     const navigate = useNavigate()
-    const location = useLocation()
 
     useEffect(() => {
         if (refreshUser) refreshUser()
@@ -195,7 +195,6 @@ export default function Booking() {
     const [photoHash, setPhotoHash] = useState('')
     const [consent, setConsent] = useState(false)
     const [verificationStatus, setVerificationStatus] = useState('idle')
-    const [verificationError, setVerificationError] = useState('')
     const [galleryGenerating, setGalleryGenerating] = useState(false)
     const [galleryMessage, setGalleryMessage] = useState('')
     const [monthKey, setMonthKey] = useState(toMonthKey(today))
@@ -251,20 +250,6 @@ export default function Booking() {
     }, [])
 
     useEffect(() => {
-        const reqServiceId = location.state?.serviceId || new URLSearchParams(location.search).get('service')
-        const reqServiceName = location.state?.serviceName
-        if (reqServiceId || reqServiceName) {
-            const matched = services.find((s) =>
-                (reqServiceId && s.id === reqServiceId) ||
-                (reqServiceName && s.name.toLowerCase() === reqServiceName.toLowerCase())
-            )
-            if (matched) {
-                setSelectedServiceId(matched.id)
-            }
-        }
-    }, [location.state, location.search, services])
-
-    useEffect(() => {
         const petType = String(
             activePet?.type || ''
         ).toLowerCase()
@@ -305,8 +290,12 @@ export default function Booking() {
         if (activePet?.photoUrl) {
             setPhotoPreview(activePet.photoUrl)
             setPhotoDataUrl(activePet.photoUrl)
-            setPhotoHash(`pet-profile-${activePet._id || activePet.name}-${String(activePet.photoUrl).slice(-20)}`)
             setConsent(true)
+            hashDataUrl(activePet.photoUrl).then((hash) => {
+                setPhotoHash(hash || `pet-profile-${activePet._id || activePet.name}`)
+            }).catch(() => {
+                setPhotoHash(`pet-profile-${activePet._id || activePet.name}`)
+            })
         } else {
             setPhotoPreview('')
             setPhotoDataUrl('')
@@ -316,9 +305,7 @@ export default function Booking() {
     }, [activePet?._id, activePet?.photoUrl, petMode])
 
     useEffect(() => {
-        if (!aiEnabled || !selectedService?.id) {
-            setRecommendations([])
-            setRecommendationsReady(false)
+        if (!aiEnabled || !activePet?.name || !activePet?.breed) {
             return
         }
 
@@ -328,24 +315,19 @@ export default function Booking() {
             setRecommendationsLoading(true)
             setRecommendationsReady(false)
         })
-
         aiPreviewApi.getRecommendations({
-            serviceId: selectedService.id,
-            petId: activePetId || undefined,
-            petName: activePet?.name || 'Pet',
-            petType: activePet?.type || 'dog',
-            breed: activePet?.breed || (activePet?.type === 'cat' ? 'Domestic Shorthair' : 'Shih Tzu'),
-            coatType: activePet?.coatType || '',
+            serviceId: selectedService?.id || '',
+            petId: activePetId,
+            petName: activePet.name,
+            petType: activePet.type || 'dog',
+            breed: activePet.breed,
+            coatType: activePet.coatType || '',
             season: season.key
         }).then(({ data }) => {
             if (!active) return
-            const recs = Array.isArray(data.recommendations) && data.recommendations.length
-                ? data.recommendations
-                : compatibleStyles.slice(0, 2).map((s, idx) => ({ id: s.id, rank: idx + 1, reason: s.description }))
-            setRecommendations(recs)
+            setRecommendations(data.recommendations || [])
         }).catch(() => {
-            if (!active) return
-            setRecommendations(compatibleStyles.slice(0, 2).map((s, idx) => ({ id: s.id, rank: idx + 1, reason: s.description })))
+            if (active) setRecommendations([])
         }).finally(() => {
             if (active) {
                 setRecommendationsLoading(false)
@@ -354,7 +336,7 @@ export default function Booking() {
         })
 
         return () => { active = false }
-    }, [aiEnabled, activePet?.name, activePet?.breed, activePet?.type, activePet?.coatType, activePetId, selectedService?.id, season.key, compatibleStyles.length])
+    }, [aiEnabled, activePet?.name, activePet?.breed, activePet?.type, activePet?.coatType, activePetId, selectedService?.id, season.key])
 
     useEffect(() => {
         if (!selectedServiceId) {
@@ -429,7 +411,6 @@ export default function Booking() {
         setGeneratedPreviewMeta(null)
         setPreviewFromCache(false)
         setVerificationStatus('idle')
-        setVerificationError('')
         setGalleryGenerating(false)
         setGalleryMessage('')
 
@@ -440,15 +421,20 @@ export default function Booking() {
         }
     }
 
-    const resetForPetChange = () => {
+    const resetForPetChange = (targetPet = null) => {
+        const pet = targetPet || activePet
         setRecommendations([])
         setRecommendationsReady(false)
-        if (activePet?.photoUrl) {
+        if (pet?.photoUrl) {
             resetStyleGallery({ clearPhoto: false })
-            setPhotoPreview(activePet.photoUrl)
-            setPhotoDataUrl(activePet.photoUrl)
-            setPhotoHash(`pet-profile-${activePet._id || activePet.name}-${String(activePet.photoUrl).slice(-20)}`)
+            setPhotoPreview(pet.photoUrl)
+            setPhotoDataUrl(pet.photoUrl)
             setConsent(true)
+            hashDataUrl(pet.photoUrl).then((hash) => {
+                setPhotoHash(hash || `pet-profile-${pet._id || pet.name}`)
+            }).catch(() => {
+                setPhotoHash(`pet-profile-${pet._id || pet.name}`)
+            })
         } else {
             setConsent(false)
             resetStyleGallery({ clearPhoto: true })
@@ -591,13 +577,13 @@ export default function Booking() {
     }
 
     const getCommonPreviewPayload = () => ({
-        petPhotoDataUrl: photoDataUrl,
-        serviceId: selectedService.id,
-        petId: activePetId,
-        petName: activePet.name,
-        petType: activePet.type || 'dog',
-        breed: activePet.breed,
-        coatType: activePet.coatType || '',
+        petPhotoDataUrl: photoDataUrl || activePet?.photoUrl || '',
+        serviceId: selectedService?.id || '',
+        petId: activePetId || (activePet?._id ? String(activePet._id) : ''),
+        petName: activePet?.name || '',
+        petType: activePet?.type || 'dog',
+        breed: activePet?.breed || '',
+        coatType: activePet?.coatType || '',
         consent: true
     })
 
@@ -748,66 +734,6 @@ export default function Booking() {
         }
 
         try {
-            let verificationToken =
-                photoVerificationTokenRef.current
-
-            if (!verificationToken) {
-                setVerificationStatus('checking')
-                setVerificationError('')
-                setGalleryMessage(
-                    'Checking your pet photo once…'
-                )
-
-                const { data } =
-                    await aiPreviewApi.verifyPhoto(
-                        getCommonPreviewPayload()
-                    )
-
-                if (galleryRunIdRef.current !== runId) return
-
-                const photoVerification =
-                    data?.photoVerification
-                const sourceCheck =
-                    photoVerification?.verification
-                const expectedPetType = String(
-                    activePet.type || ''
-                ).toLowerCase()
-
-                if (
-                    sourceCheck?.policyVersion !==
-                        SOURCE_PHOTO_POLICY_VERSION
-                ) {
-                    throw new Error(
-                        'The running backend still uses an older pet-photo verifier. Restart the updated backend, then upload the photo again.'
-                    )
-                }
-
-                if (
-                    sourceCheck?.valid !== true ||
-                    sourceCheck?.detectedAnimal !==
-                        expectedPetType
-                ) {
-                    const detected = sourceCheck?.detectedAnimal
-                    const reason = sourceCheck?.reason || ''
-                    let message = `This photo does not pass the ${expectedPetType} verification.`
-                    if (detected === 'cat' && expectedPetType === 'dog') {
-                        message = 'This photo appears to show a cat. Please upload a clear photo of the selected dog.'
-                    } else if (detected === 'dog' && expectedPetType === 'cat') {
-                        message = 'This photo appears to show a dog. Please upload a clear photo of the selected cat.'
-                    } else if (reason) {
-                        message = `${message} ${reason}`
-                    }
-                    throw new Error(message)
-                }
-
-                verificationToken =
-                    photoVerification.token
-                photoVerificationTokenRef.current =
-                    verificationToken
-                setVerificationStatus('verified')
-                setVerificationError('')
-            }
-
             const cachedResults = await Promise.all(
                 targetStyles.map(async (style) => ({
                     style,
@@ -847,8 +773,59 @@ export default function Booking() {
                 })
 
             if (!stylesForRun.length) {
+                setVerificationStatus('verified')
                 setGalleryMessage('')
                 return
+            }
+
+            let verificationToken =
+                photoVerificationTokenRef.current
+
+            if (!verificationToken) {
+                setVerificationStatus('checking')
+                setGalleryMessage(
+                    'Checking your pet photo once…'
+                )
+
+                const { data } =
+                    await aiPreviewApi.verifyPhoto(
+                        getCommonPreviewPayload()
+                    )
+
+                if (galleryRunIdRef.current !== runId) return
+
+                const photoVerification =
+                    data?.photoVerification
+                const sourceCheck =
+                    photoVerification?.verification
+                const expectedPetType = String(
+                    activePet.type || ''
+                ).toLowerCase()
+
+                if (
+                    sourceCheck?.policyVersion !==
+                        SOURCE_PHOTO_POLICY_VERSION
+                ) {
+                    throw new Error(
+                        'The running backend still uses an older pet-photo verifier. Restart the updated backend, then upload the photo again.'
+                    )
+                }
+
+                if (
+                    sourceCheck?.valid !== true ||
+                    sourceCheck?.detectedAnimal !==
+                        expectedPetType
+                ) {
+                    throw new Error(
+                        `This photo does not pass the ${expectedPetType} verification. Upload a clear photo of the selected ${expectedPetType}.`
+                    )
+                }
+
+                verificationToken =
+                    photoVerification.token
+                photoVerificationTokenRef.current =
+                    verificationToken
+                setVerificationStatus('verified')
             }
 
             setGalleryMessage(
@@ -893,9 +870,7 @@ export default function Booking() {
         } catch (error) {
             if (galleryRunIdRef.current !== runId) return
 
-            const errorMessage = getErrorMessage(error)
             setVerificationStatus('error')
-            setVerificationError(errorMessage)
             setStylePreviews((current) =>
                 Object.fromEntries(
                     Object.entries(current).map(
@@ -906,13 +881,14 @@ export default function Booking() {
                                 : {
                                     ...entry,
                                     status: 'error',
-                                    error: errorMessage
+                                    error:
+                                        getErrorMessage(error)
                                 }
                         ]
                     )
                 )
             )
-            toast.error(errorMessage)
+            toast.error(getErrorMessage(error))
         } finally {
             galleryBusyRef.current = false
 
@@ -948,8 +924,7 @@ export default function Booking() {
         photoHash &&
         previewVersion &&
         compatibleStyles.length &&
-        !stylesLoading &&
-        recommendationsReady
+        !stylesLoading
     )
         ? [
             selectedService.id,
@@ -1136,17 +1111,17 @@ export default function Booking() {
 
     if (booked) {
         return (
-            <div className='min-h-screen bg-[#F6F7F2] px-4 py-12 text-[#13231B] sm:px-6 lg:px-8'>
-                <div className='mx-auto max-w-xl rounded-[2rem] border border-[#DDE4DE] bg-white p-7 text-center shadow-xs sm:p-10 space-y-6'>
-                    <span className='mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-[#EDF3EE] text-[#1F4D3E]'>
-                        <Check size={30} strokeWidth={2.5} />
+            <div className='min-h-screen bg-[#FAF7F2] px-4 py-12 text-[#261C14] sm:px-6 lg:px-8'>
+                <div className='mx-auto max-w-2xl rounded-xl border border-[#E2D9C8] bg-white p-8 text-center shadow-xs sm:p-12 space-y-6'>
+                    <span className='mx-auto grid h-16 w-16 place-items-center rounded-xl bg-emerald-100 text-emerald-800 shadow-xs'>
+                        <Check size={32} />
                     </span>
                     <div>
-                        <h1 className='font-serif text-3xl font-bold tracking-tight text-[#13231B] sm:text-4xl'>Appointment Confirmed</h1>
-                        <p className='mt-1.5 text-sm text-[#68776F]'>Your grooming appointment has been received and scheduled.</p>
+                        <h1 className='font-serif text-3xl font-bold tracking-tight text-[#261C14] sm:text-4xl'>Appointment Confirmed</h1>
+                        <p className='mt-1.5 text-sm text-[#68594E]'>Your grooming appointment has been received and saved.</p>
                     </div>
 
-                    <div className='rounded-2xl border border-[#DDE4DE] bg-[#FAFBF8] p-5 text-left space-y-1'>
+                    <div className='rounded-lg border border-[#E2D9C8] bg-[#FAF7F2] p-5 text-left space-y-2.5'>
                         <SummaryRow label='Pet' value={`${booked.petName} (${booked.breed})`} />
                         <SummaryRow label='Service' value={booked.service} />
                         {booked.haircutStyle && <SummaryRow label='Style' value={booked.haircutStyle} />}
@@ -1156,24 +1131,18 @@ export default function Booking() {
                     </div>
 
                     {/* Arrival Policy Notice Banner */}
-                    <div className='rounded-2xl border border-[#F0DEB6] bg-[#FFF9EC] p-4 text-left flex items-start gap-3.5 text-[#6E4A0D] shadow-xs'>
-                        <span className='grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#FFF0D1] text-[#8A5D13]'>
-                            <Clock size={17} />
-                        </span>
+                    <div className='rounded-lg border border-amber-300 bg-amber-50 p-4 text-left flex items-start gap-3 text-amber-950 shadow-xs'>
+                        <Clock size={18} className='text-amber-700 shrink-0 mt-0.5' />
                         <div className='text-xs leading-relaxed'>
-                            <p className='font-bold text-[#8A5D13] text-sm'>Arrival Guideline</p>
-                            <p className='mt-0.5 text-[#6E4A0D]'>Please arrive <strong>5–10 minutes before</strong> your scheduled appointment time.</p>
-                            <p className='mt-1 text-[11px] font-semibold text-[#8A5D13]/90'>Late arrival beyond 10 minutes may result in cancellation to respect other reserved slots.</p>
+                            <p className='font-bold text-amber-900 text-sm mb-1'>Salon Arrival Policy:</p>
+                            <p>Please arrive <strong>5–10 minutes before</strong> your scheduled appointment time.</p>
+                            <p className='mt-1 text-amber-800 font-semibold'>Notice: Late arrival beyond 10 minutes will automatically cancel the appointment.</p>
                         </div>
                     </div>
 
                     <div className='flex flex-col justify-center gap-3 sm:flex-row pt-2'>
-                        <button onClick={() => navigate('/appointments')} className='rounded-xl bg-[#1F4D3E] px-6 py-3 text-sm font-bold text-white shadow-xs transition hover:bg-[#13231B]'>
-                            View Appointments
-                        </button>
-                        <button onClick={() => navigate('/dashboard')} className='rounded-xl border border-[#DDE4DE] bg-white px-6 py-3 text-sm font-bold text-[#405148] transition hover:bg-[#F6F7F2]'>
-                            Back to Dashboard
-                        </button>
+                        <button onClick={() => navigate('/appointments')} className='rounded-lg bg-[#C25E2B] px-6 py-3 font-bold text-white shadow-xs transition hover:bg-[#A84E20]'>View Appointments</button>
+                        <button onClick={() => navigate('/dashboard')} className='rounded-lg border border-[#E2D9C8] bg-white px-6 py-3 font-bold text-[#68594E] transition hover:bg-[#FAF7F2]'>Back to Dashboard</button>
                     </div>
                 </div>
             </div>
@@ -1181,24 +1150,27 @@ export default function Booking() {
     }
 
     return (
-        <div className='min-h-screen bg-[#F6F7F2] px-4 py-6 pb-28 text-[#13231B] sm:px-6 sm:py-8 lg:px-8 lg:pb-12'>
+        <div className='min-h-screen bg-[#FAF7F2] px-4 py-6 pb-28 text-[#261C14] sm:px-6 sm:py-8 lg:px-8 lg:pb-12'>
             <div className='mx-auto max-w-7xl'>
-                <div className='mb-7 rounded-[1.75rem] border border-[#DDE4DE] bg-white p-6 shadow-xs sm:p-8'>
-                    <h1 className='font-serif text-3xl font-bold tracking-tight text-[#13231B] sm:text-4xl lg:text-5xl'>
+                <div className='mb-6 border-b border-[#E2D9C8] pb-5'>
+                    <span className='inline-block rounded-full bg-[#C25E2B]/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#C25E2B]'>
+                        Grooming Reservation
+                    </span>
+                    <h1 className='mt-2 font-serif text-2xl font-bold tracking-tight text-[#261C14] sm:text-4xl'>
                         Book a Grooming Appointment
                     </h1>
-                    <p className='mt-2 max-w-2xl text-sm leading-6 text-[#68776F] sm:text-base'>
+                    <p className='mt-1 text-xs text-[#68594E] sm:text-sm'>
                         Select your service, pet profile, haircut style preview, and schedule date.
                     </p>
                 </div>
 
                 {/* Account Enforcement Status Banner */}
                 {user?.accountStatus === 'warned' && (
-                    <div className='mb-6 rounded-2xl border border-[#F0DEB6] bg-[#FFF4DC] p-4 text-xs text-[#6E4A0D] flex items-start gap-3 shadow-xs'>
-                        <AlertTriangle className='h-5 w-5 shrink-0 text-[#13231B] mt-0.5' />
+                    <div className='mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-950 flex items-start gap-3 shadow-xs'>
+                        <AlertTriangle className='h-5 w-5 shrink-0 text-amber-600 mt-0.5' />
                         <div className='space-y-1'>
-                            <p className='font-bold text-[#13231B] text-sm'>Account Policy Notice</p>
-                            <p className='text-[#13231B] leading-relaxed'>
+                            <p className='font-bold text-amber-900 text-sm'>Account Policy Notice</p>
+                            <p className='text-amber-800 leading-relaxed'>
                                 {user.warningMessage || user.statusReason || 'You have received a formal warning regarding multiple booking cancellations or no-show policy violations. Please attend scheduled appointments on time.'}
                             </p>
                         </div>
@@ -1206,14 +1178,14 @@ export default function Booking() {
                 )}
 
                 {(user?.accountStatus === 'booking_blocked' || user?.accountStatus === 'banned') && (
-                    <div className='mb-6 rounded-2xl border border-[#F0CCCC] bg-[#FBEAEA] p-5 text-xs text-[#7F3333] flex items-start gap-3 shadow-md'>
-                        <Ban className='h-6 w-6 shrink-0 text-[#9E3E3E] mt-0.5' />
+                    <div className='mb-6 rounded-xl border border-red-300 bg-red-50 p-5 text-xs text-red-950 flex items-start gap-3 shadow-md'>
+                        <Ban className='h-6 w-6 shrink-0 text-red-600 mt-0.5' />
                         <div className='space-y-1.5'>
-                            <p className='font-bold text-[#7F3333] text-base'>Booking Privileges Suspended</p>
-                            <p className='text-[#7F3333] leading-relaxed text-sm'>
+                            <p className='font-bold text-red-900 text-base'>Booking Privileges Suspended</p>
+                            <p className='text-red-800 leading-relaxed text-sm'>
                                 {user.statusReason || user.warningMessage || 'Your customer account has been blocked from scheduling new grooming appointments by salon administration due to repeated cancellations or policy violations.'}
                             </p>
-                            <p className='text-xs font-semibold text-[#7F3333] pt-1'>
+                            <p className='text-xs font-semibold text-red-900 pt-1'>
                                 If you believe this is an error, please contact TimmyTails salon support at +63 975 669 2647.
                             </p>
                         </div>
@@ -1221,48 +1193,48 @@ export default function Booking() {
                 )}
 
                 {/* Stepper Progress Header */}
-                <div className='mb-6 rounded-[1.5rem] border border-[#DDE4DE] bg-white p-3.5 shadow-sm'>
+                <div className='mb-6 rounded-xl border border-[#E2D9C8] bg-white p-3 shadow-xs'>
                     {/* Mobile Progress Bar */}
-                    <div className='mb-2 flex items-center justify-between text-xs font-bold text-[#2F6B57] lg:hidden'>
+                    <div className='mb-2 flex items-center justify-between text-xs font-bold text-[#C25E2B] lg:hidden'>
                         <span>Step {mobileStep} of {aiEnabled ? '4' : '3'}</span>
                         <span className='truncate max-w-[200px] text-right'>
                             {mobileStep === 1 ? '1. Pet & Service' : mobileStep === 2 ? '2. AI Cut Preview' : mobileStep === 3 ? '3. Date & Schedule' : '4. Review & Confirm'}
                         </span>
                     </div>
-                    <div className='h-1.5 w-full rounded-full bg-[#F6F7F2] lg:hidden mb-3 overflow-hidden border border-[#F6F7F2]'>
+                    <div className='h-1.5 w-full rounded-full bg-[#FAF7F2] lg:hidden mb-3 overflow-hidden border border-[#E2D9C8]'>
                         <div
-                            className='h-full bg-[#2F6B57] transition-all duration-300 rounded-full'
+                            className='h-full bg-[#C25E2B] transition-all duration-300 rounded-full'
                             style={{ width: `${(mobileStep / (aiEnabled ? 4 : 3)) * 100}%` }}
                         />
                     </div>
 
                     <div className='grid grid-cols-4 gap-1 sm:gap-2'>
-                        <button type='button' onClick={() => scrollToSection('booking-section-1', 1)} className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-2 rounded-lg p-1.5 sm:p-2.5 text-[11px] sm:text-xs font-bold transition min-w-0 ${mobileStep === 1 ? 'bg-[#2F6B57] text-[#F6F7F2] shadow-xs' : selectedService && activePet?.name ? 'bg-[#E4F1EA] text-[#216245]'  : 'bg-[#F6F7F2] text-[#405148]'}`}>
-                            <span className={`grid h-4 w-4 sm:h-5 sm:w-5 shrink-0 place-items-center rounded-full text-[9px] sm:text-[10px] font-bold ${mobileStep === 1 ? 'bg-[#F6F7F2] text-[#2F6B57]' : selectedService && activePet?.name ? 'bg-[#216245] text-white' : 'bg-[#F6F7F2] text-[#405148]'}`}>
+                        <button type='button' onClick={() => scrollToSection('booking-section-1', 1)} className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-2 rounded-lg p-1.5 sm:p-2.5 text-[11px] sm:text-xs font-bold transition min-w-0 ${mobileStep === 1 ? 'bg-[#C25E2B] text-white shadow-xs' : selectedService && activePet?.name ? 'bg-emerald-50 text-emerald-800' : 'bg-[#FAF7F2] text-[#68594E]'}`}>
+                            <span className={`grid h-4 w-4 sm:h-5 sm:w-5 shrink-0 place-items-center rounded-full text-[9px] sm:text-[10px] font-bold ${mobileStep === 1 ? 'bg-white text-[#C25E2B]' : selectedService && activePet?.name ? 'bg-emerald-700 text-white' : 'bg-[#E2D9C8] text-[#68594E]'}`}>
                                 {selectedService && activePet?.name ? <Check size={10} /> : '1'}
                             </span>
                             <span className='sm:hidden font-bold'>Pet</span>
                             <span className='hidden sm:inline truncate'>1. Pet &amp; Service</span>
                         </button>
 
-                        <button type='button' onClick={() => scrollToSection('booking-section-2', 2)} className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-2 rounded-lg p-1.5 sm:p-2.5 text-[11px] sm:text-xs font-bold transition min-w-0 ${mobileStep === 2 ? 'bg-[#2F6B57] text-[#F6F7F2] shadow-xs' : selectedStyle ? 'bg-[#E4F1EA] text-[#216245]'  : 'bg-[#F6F7F2] text-[#405148]'}`}>
-                            <span className={`grid h-4 w-4 sm:h-5 sm:w-5 shrink-0 place-items-center rounded-full text-[9px] sm:text-[10px] font-bold ${mobileStep === 2 ? 'bg-[#F6F7F2] text-[#2F6B57]' : selectedStyle ? 'bg-[#216245] text-white' : 'bg-[#F6F7F2] text-[#405148]'}`}>
+                        <button type='button' onClick={() => scrollToSection('booking-section-2', 2)} className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-2 rounded-lg p-1.5 sm:p-2.5 text-[11px] sm:text-xs font-bold transition min-w-0 ${mobileStep === 2 ? 'bg-[#C25E2B] text-white shadow-xs' : selectedStyle ? 'bg-emerald-50 text-emerald-800' : 'bg-[#FAF7F2] text-[#68594E]'}`}>
+                            <span className={`grid h-4 w-4 sm:h-5 sm:w-5 shrink-0 place-items-center rounded-full text-[9px] sm:text-[10px] font-bold ${mobileStep === 2 ? 'bg-white text-[#C25E2B]' : selectedStyle ? 'bg-emerald-700 text-white' : 'bg-[#E2D9C8] text-[#68594E]'}`}>
                                 {selectedStyle ? <Check size={10} /> : '2'}
                             </span>
                             <span className='sm:hidden font-bold'>Style</span>
                             <span className='hidden sm:inline truncate'>2. AI Cut Preview</span>
                         </button>
 
-                        <button type='button' onClick={() => scrollToSection('booking-section-3', 3)} className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-2 rounded-lg p-1.5 sm:p-2.5 text-[11px] sm:text-xs font-bold transition min-w-0 ${mobileStep === 3 ? 'bg-[#2F6B57] text-[#F6F7F2] shadow-xs' : selectedDate && selectedSlot ? 'bg-[#E4F1EA] text-[#216245]'  : 'bg-[#F6F7F2] text-[#405148]'}`}>
-                            <span className={`grid h-4 w-4 sm:h-5 sm:w-5 shrink-0 place-items-center rounded-full text-[9px] sm:text-[10px] font-bold ${mobileStep === 3 ? 'bg-[#F6F7F2] text-[#2F6B57]' : selectedDate && selectedSlot ? 'bg-[#216245] text-white' : 'bg-[#F6F7F2] text-[#405148]'}`}>
+                        <button type='button' onClick={() => scrollToSection('booking-section-3', 3)} className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-2 rounded-lg p-1.5 sm:p-2.5 text-[11px] sm:text-xs font-bold transition min-w-0 ${mobileStep === 3 ? 'bg-[#C25E2B] text-white shadow-xs' : selectedDate && selectedSlot ? 'bg-emerald-50 text-emerald-800' : 'bg-[#FAF7F2] text-[#68594E]'}`}>
+                            <span className={`grid h-4 w-4 sm:h-5 sm:w-5 shrink-0 place-items-center rounded-full text-[9px] sm:text-[10px] font-bold ${mobileStep === 3 ? 'bg-white text-[#C25E2B]' : selectedDate && selectedSlot ? 'bg-emerald-700 text-white' : 'bg-[#E2D9C8] text-[#68594E]'}`}>
                                 {selectedDate && selectedSlot ? <Check size={10} /> : '3'}
                             </span>
                             <span className='sm:hidden font-bold'>Date</span>
                             <span className='hidden sm:inline truncate'>3. Date &amp; Schedule</span>
                         </button>
 
-                        <button type='button' onClick={() => scrollToSection('booking-section-4', 4)} className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-2 rounded-lg p-1.5 sm:p-2.5 text-[11px] sm:text-xs font-bold transition min-w-0 ${mobileStep === 4 ? 'bg-[#2F6B57] text-[#F6F7F2] shadow-xs' : validate() === null ? 'bg-[#E4F1EA] text-[#216245]'  : 'bg-[#F6F7F2] text-[#405148]'}`}>
-                            <span className={`grid h-4 w-4 sm:h-5 sm:w-5 shrink-0 place-items-center rounded-full text-[9px] sm:text-[10px] font-bold ${mobileStep === 4 ? 'bg-[#F6F7F2] text-[#2F6B57]' : validate() === null ? 'bg-[#216245] text-white' : 'bg-[#F6F7F2] text-[#405148]'}`}>
+                        <button type='button' onClick={() => scrollToSection('booking-section-4', 4)} className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-2 rounded-lg p-1.5 sm:p-2.5 text-[11px] sm:text-xs font-bold transition min-w-0 ${mobileStep === 4 ? 'bg-[#C25E2B] text-white shadow-xs' : validate() === null ? 'bg-emerald-50 text-emerald-800' : 'bg-[#FAF7F2] text-[#68594E]'}`}>
+                            <span className={`grid h-4 w-4 sm:h-5 sm:w-5 shrink-0 place-items-center rounded-full text-[9px] sm:text-[10px] font-bold ${mobileStep === 4 ? 'bg-white text-[#C25E2B]' : validate() === null ? 'bg-emerald-700 text-white' : 'bg-[#E2D9C8] text-[#68594E]'}`}>
                                 4
                             </span>
                             <span className='sm:hidden font-bold'>Review</span>
@@ -1279,29 +1251,29 @@ export default function Booking() {
                         
                         {/* Section 1: Service and Pet (Visible on Desktop OR when mobileStep === 1) */}
                         <div className={mobileStep === 1 ? 'block' : 'hidden lg:block'}>
-                            <Section id='booking-section-1' number='1' title='Service and Pet' description='Select a grooming service and the pet receiving treatment.' icon={<Scissors size={18} className='text-[#2F6B57]' />}>
+                            <Section id='booking-section-1' number='1' title='Service and Pet' description='Select a grooming service and the pet receiving treatment.' icon={<Scissors size={18} className='text-[#C25E2B]' />}>
                                 <div className='grid gap-3 md:grid-cols-2'>
                                     {services.map((service) => {
                                         const selected = selectedServiceId === service.id
                                         return (
-                                            <button key={service.id} type='button' onClick={() => selectService(service.id)} aria-pressed={selected} className={`rounded-xl border p-4 text-left transition ${selected ? 'border-[#2F6B57] bg-[#EDF3EE] ring-2 ring-[#2F6B57]/20 shadow-xs' : 'border-[#DDE4DE] bg-white hover:border-[#B8C7BE] hover:shadow-xs'}`}>
+                                            <button key={service.id} type='button' onClick={() => selectService(service.id)} aria-pressed={selected} className={`rounded-xl border p-4 text-left transition ${selected ? 'border-[#C25E2B] bg-[#C25E2B]/5 ring-1 ring-[#C25E2B]' : 'border-[#E2D9C8] bg-white hover:border-[#C25E2B]/60'}`}>
                                                 <div className='flex items-start justify-between gap-3'>
-                                                    <div><h3 className='font-serif text-lg font-bold text-[#13231B]'>{service.name}</h3><p className='mt-1 text-xs leading-relaxed text-[#405148]'>{service.description}</p></div>
-                                                    {selected && <span className='grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#1F4D3E] text-white'><Check size={14} /></span>}
+                                                    <div><h3 className='font-serif text-lg font-bold text-[#261C14]'>{service.name}</h3><p className='mt-1 text-xs leading-relaxed text-[#68594E]'>{service.description}</p></div>
+                                                    {selected && <span className='grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#C25E2B] text-white'><Check size={14} /></span>}
                                                 </div>
-                                                <div className='mt-3 flex items-center justify-between text-xs'><span className='font-bold text-[#1F4D3E] text-sm'>₱{service.price.toLocaleString('en-PH')}</span><span className='flex items-center gap-1 text-[#405148]'><Clock3 size={13} />{service.durationMinutes} min</span></div>
-                                                {service.supportsAiPreview && <p className='mt-2 text-[11px] font-bold text-[#2F6B57]'>AI Style Preview Available</p>}
+                                                <div className='mt-3 flex items-center justify-between text-xs'><span className='font-bold text-[#C25E2B] text-sm'>₱{service.price.toLocaleString('en-PH')}</span><span className='flex items-center gap-1 text-[#68594E]'><Clock3 size={13} />{service.durationMinutes} min</span></div>
+                                                {service.supportsAiPreview && <p className='mt-2 text-[11px] font-bold text-emerald-800'>AI Style Preview Available</p>}
                                             </button>
                                         )
                                     })}
                                 </div>
 
-                                <div className='my-6 h-px bg-[#E5EAE6]' />
+                                <div className='my-6 h-px bg-[#E2D9C8]' />
                                 <div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
-                                    <div><h3 className='font-serif text-lg font-bold text-[#13231B]'>Pet Profile</h3><p className='mt-0.5 text-xs text-[#405148]'>Choose a saved pet or enter details for a new companion.</p></div>
-                                    <div className='inline-flex rounded-xl bg-[#EDF3EE] p-1 border border-[#DDE4DE]'>
-                                        <button type='button' onClick={() => { setPetMode('existing'); resetForPetChange() }} disabled={!pets.length} className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${petMode === 'existing' ? 'bg-[#1F4D3E] text-white shadow-xs' : 'text-[#405148] hover:text-[#13231B]'} disabled:opacity-40`}>Saved Pets</button>
-                                        <button type='button' onClick={() => { setPetMode('new'); resetForPetChange() }} className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${petMode === 'new' ? 'bg-[#1F4D3E] text-white shadow-xs' : 'text-[#405148] hover:text-[#13231B]'}`}>New Pet</button>
+                                    <div><h3 className='font-serif text-lg font-bold text-[#261C14]'>Pet Profile</h3><p className='mt-0.5 text-xs text-[#68594E]'>Choose a saved pet or enter details for a new companion.</p></div>
+                                    <div className='inline-flex rounded-lg bg-[#FAF7F2] p-1 border border-[#E2D9C8]'>
+                                        <button type='button' onClick={() => { setPetMode('existing'); const currentPet = pets.find((p) => p._id === selectedPetId) || pets[0]; resetForPetChange(currentPet) }} disabled={!pets.length} className={`rounded-md px-4 py-1.5 text-xs font-bold ${petMode === 'existing' ? 'bg-white shadow-xs text-[#261C14]' : 'text-[#68594E]'} disabled:opacity-40`}>Saved Pets</button>
+                                        <button type='button' onClick={() => { setPetMode('new'); resetForPetChange(newPet) }} className={`rounded-md px-4 py-1.5 text-xs font-bold ${petMode === 'new' ? 'bg-white shadow-xs text-[#261C14]' : 'text-[#68594E]'}`}>New Pet</button>
                                     </div>
                                 </div>
 
@@ -1313,26 +1285,26 @@ export default function Booking() {
                                             const unvax = pet.vaccinated === false || pet.vaccinated === 'no' || pet.vaccinated === 'false'
                                             const selected = selectedPetId === pet._id
                                             return (
-                                                <button key={pet._id} type='button' onClick={() => { setSelectedPetId(pet._id); resetForPetChange() }} aria-pressed={selected} className={`flex items-start gap-3 rounded-xl border p-4 text-left transition ${selected ? 'border-[#2F6B57] bg-[#EDF3EE] ring-2 ring-[#2F6B57]/20 shadow-xs' : 'border-[#DDE4DE] bg-white hover:border-[#B8C7BE] hover:shadow-xs'}`}>
-                                                    <span className='grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-[#DDE4DE] bg-[#F6F7F2] text-[#13231B]'>
+                                                <button key={pet._id} type='button' onClick={() => { setSelectedPetId(pet._id); resetForPetChange(pet) }} aria-pressed={selected} className={`flex items-start gap-3 rounded-xl border p-4 text-left transition ${selected ? 'border-[#C25E2B] bg-[#C25E2B]/5 ring-1 ring-[#C25E2B]' : 'border-[#E2D9C8] bg-white hover:border-[#C25E2B]/60'}`}>
+                                                    <span className='grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-[#E2D9C8] bg-[#FAF7F2] text-[#2B4C3F]'>
                                                         {pet.photoUrl ? (
                                                             <img src={pet.photoUrl} alt={pet.name} className='h-full w-full object-cover' />
                                                         ) : (
-                                                            <span className='font-serif font-bold text-lg text-[#1F4D3E]'>{pet.name[0]?.toUpperCase()}</span>
+                                                            <span className='font-serif font-bold text-lg'>{pet.name[0]?.toUpperCase()}</span>
                                                         )}
                                                     </span>
                                                     <div className='min-w-0 flex-1'>
-                                                        <p className='font-serif text-base font-bold text-[#13231B] truncate'>{pet.name}</p>
-                                                        <p className='mt-0.5 text-xs text-[#405148]'>{pet.type === 'cat' ? 'Cat' : 'Dog'} · {pet.breed}{petAge !== null ? ` · ${petAge} mo` : ''}</p>
-                                                        {pet.coatType && <p className='mt-1 text-[11px] text-[#2F6B57]'>{pet.coatType}</p>}
+                                                        <p className='font-serif text-base font-bold text-[#261C14] truncate'>{pet.name}</p>
+                                                        <p className='mt-0.5 text-xs text-[#68594E]'>{pet.type === 'cat' ? 'Cat' : 'Dog'} · {pet.breed}{petAge !== null ? ` · ${petAge} mo` : ''}</p>
+                                                        {pet.coatType && <p className='mt-1 text-[11px] text-[#8C7A6D]'>{pet.coatType}</p>}
                                                         {(tooYoung || unvax) && (
                                                             <div className='mt-2 flex flex-wrap gap-1'>
-                                                                {tooYoung && <span className='rounded bg-[#FFF4DC] border border-[#F0DEB6] px-2 py-0.5 text-[10px] font-bold text-[#8A5D13]'>&lt; 3 Months</span>}
-                                                                {unvax && <span className='rounded bg-[#FBEAEA] border border-[#F0CCCC] px-2 py-0.5 text-[10px] font-bold text-[#9E3E3E]'>Unvaccinated</span>}
+                                                                {tooYoung && <span className='rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800'>&lt; 3 Months</span>}
+                                                                {unvax && <span className='rounded bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-800'>Unvaccinated</span>}
                                                             </div>
                                                         )}
                                                     </div>
-                                                    {selected && <span className='grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#1F4D3E] text-white'><Check size={12} /></span>}
+                                                    {selected && <span className='grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#C25E2B] text-white'><Check size={12} /></span>}
                                                 </button>
                                             )
                                         })}
@@ -1342,7 +1314,7 @@ export default function Booking() {
                                         <Input label='PET NAME' value={newPet.name} onChange={(value) => { setNewPet({ ...newPet, name: value }); resetForPetChange() }} />
                                         <label className='block'>
                                             <Label>PET TYPE</Label>
-                                            <select value={newPet.type} onChange={(event) => { setNewPet({ ...newPet, type: event.target.value }); resetForPetChange() }} className='h-11 w-full rounded-lg border border-[#DDE4DE] bg-white px-3.5 text-sm outline-none focus:border-[#2F6B57]'>
+                                            <select value={newPet.type} onChange={(event) => { setNewPet({ ...newPet, type: event.target.value }); resetForPetChange() }} className='h-11 w-full rounded-lg border border-[#E2D9C8] bg-white px-3.5 text-sm outline-none focus:border-[#C25E2B]'>
                                                 <option value='dog'>Dog</option>
                                                 <option value='cat'>Cat</option>
                                             </select>
@@ -1352,24 +1324,24 @@ export default function Booking() {
                                         <Input label='PET AGE (MONTHS)' type='number' min='0' value={newPet.ageMonths} onChange={(value) => { setNewPet({ ...newPet, ageMonths: value }); resetForPetChange() }} placeholder='e.g. 6' />
                                         <label className='block'>
                                             <Label>IS PET FULLY VACCINATED?</Label>
-                                            <select value={newPet.vaccinated} onChange={(event) => { setNewPet({ ...newPet, vaccinated: event.target.value }); resetForPetChange() }} className='h-11 w-full rounded-lg border border-[#DDE4DE] bg-white px-3.5 text-sm outline-none focus:border-[#2F6B57]'>
+                                            <select value={newPet.vaccinated} onChange={(event) => { setNewPet({ ...newPet, vaccinated: event.target.value }); resetForPetChange() }} className='h-11 w-full rounded-lg border border-[#E2D9C8] bg-white px-3.5 text-sm outline-none focus:border-[#C25E2B]'>
                                                 <option value='yes'>Yes - Fully Vaccinated</option>
                                                 <option value='no'>No - Not Vaccinated</option>
                                             </select>
                                         </label>
                                         <label className='block sm:col-span-2'>
                                             <Label>PET NOTES (OPTIONAL)</Label>
-                                            <textarea value={newPet.notes} onChange={(event) => setNewPet({ ...newPet, notes: event.target.value })} rows={2} className='w-full rounded-lg border border-[#DDE4DE] bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#2F6B57]' />
+                                            <textarea value={newPet.notes} onChange={(event) => setNewPet({ ...newPet, notes: event.target.value })} rows={2} className='w-full rounded-lg border border-[#E2D9C8] bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#C25E2B]' />
                                         </label>
                                     </div>
                                 )}
 
                                 {isPetTooYoung && (
-                                    <div className='mt-4 flex items-start gap-3 rounded-xl border border-[#F0DEB6] bg-[#FFF4DC] p-3.5 text-[#6E4A0D] shadow-xs'>
-                                        <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0 text-[#8A5D13]' />
+                                    <div className='mt-4 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3.5 text-amber-900 shadow-xs'>
+                                        <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0 text-amber-600' />
                                         <div>
-                                            <h4 className='font-bold text-xs text-[#8A5D13] uppercase tracking-wide'>Notice</h4>
-                                            <p className='mt-0.5 text-xs leading-relaxed'>
+                                            <h4 className='font-bold text-xs text-amber-950 uppercase tracking-wide'>Notice</h4>
+                                            <p className='mt-0.5 text-xs text-amber-800 leading-relaxed'>
                                                 Pets must be at least 3 months old to be booked for grooming services.
                                             </p>
                                         </div>
@@ -1377,12 +1349,12 @@ export default function Booking() {
                                 )}
 
                                 {!isPetTooYoung && isPetNotVaccinated && (
-                                    <div className='mt-4 flex items-start gap-3 rounded-xl border border-[#F0CCCC] bg-[#FBEAEA] p-3.5 text-[#7F3333]'>
-                                        <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0 text-[#9E3E3E]' />
+                                    <div className='mt-4 flex items-start gap-3 rounded-lg border border-red-300 bg-red-50 p-3.5 text-red-900 shadow-xs'>
+                                        <AlertTriangle className='mt-0.5 h-4 w-4 shrink-0 text-red-600' />
                                         <div>
-                                            <h4 className='font-bold text-xs text-[#7F3333] uppercase tracking-wide'>Vaccination Required</h4>
-                                            <p className='mt-0.5 text-xs text-[#7F3333] leading-relaxed'>
-                                                Pets must be fully vaccinated prior to their grooming visit.
+                                            <h4 className='font-bold text-xs text-red-950 uppercase tracking-wide'>Vaccination Required</h4>
+                                            <p className='mt-0.5 text-xs text-red-800 leading-relaxed'>
+                                                Pets must be fully vaccinated prior to salon entry.
                                             </p>
                                         </div>
                                     </div>
@@ -1393,9 +1365,9 @@ export default function Booking() {
 
                         {/* Section 2: Style and Preview (Visible on Desktop OR when mobileStep === 2) */}
                         <div className={mobileStep === 2 ? 'block' : 'hidden lg:block'}>
-                            <Section id='booking-section-2' number='2' title='Style and Preview' description={aiEnabled ? 'Upload one pet photo, compare styles, and choose a haircut reference.' : 'Style preview is available for Full Grooming and Custom Styling.'} icon={<WandSparkles size={18} className='text-[#2F6B57]' />} disabled={!selectedService || !activePet?.name || !activePet?.breed || isPetTooYoung || isPetNotVaccinated}>
+                            <Section id='booking-section-2' number='2' title='Style and Preview' description={aiEnabled ? 'Upload one pet photo, compare styles, and choose a haircut reference.' : 'Style preview is available for Full Grooming and Custom Styling.'} icon={<WandSparkles size={18} className='text-[#C25E2B]' />} disabled={!selectedService || !activePet?.name || !activePet?.breed || isPetTooYoung || isPetNotVaccinated}>
                                 {!aiEnabled ? (
-                                    <div className='rounded-lg border border-[#DDE4DE] bg-white p-4 text-xs text-[#405148]'>The selected service does not require a haircut preview. Proceed to schedule selection.</div>
+                                    <div className='rounded-lg border border-[#E2D9C8] bg-[#FAF7F2] p-4 text-xs text-[#68594E]'>The selected service does not require a haircut preview. Proceed to schedule selection.</div>
                                 ) : (
                                     <AiPreviewPanel
                                         season={season}
@@ -1407,8 +1379,6 @@ export default function Booking() {
                                         consent={consent}
                                         onConsentChange={handleConsentChange}
                                         verificationStatus={verificationStatus}
-                                        verificationError={verificationError}
-                                        onStartGeneration={() => startPersonalizedGallery()}
                                         galleryGenerating={galleryGenerating}
                                         galleryMessage={galleryMessage}
                                         hasFailures={hasStyleFailures}
@@ -1431,11 +1401,11 @@ export default function Booking() {
                                 )}
 
                                 {/* Step 2 Mobile Controls */}
-                                <div className='mt-4 pt-3 border-t border-[#DDE4DE] flex items-center justify-between lg:hidden'>
+                                <div className='mt-4 pt-3 border-t border-[#E2D9C8] flex items-center justify-between lg:hidden'>
                                     <button
                                         type='button'
                                         onClick={() => { setMobileStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                                        className='inline-flex items-center gap-1 rounded-lg border border-[#DDE4DE] bg-white px-3 py-1.5 text-xs font-bold text-[#405148]'
+                                        className='inline-flex items-center gap-1 rounded-lg border border-[#E2D9C8] bg-white px-3 py-1.5 text-xs font-bold text-[#68594E]'
                                     >
                                         <ChevronLeft size={14} />
                                         <span>Back to Pet &amp; Service</span>
@@ -1446,7 +1416,7 @@ export default function Booking() {
 
                         {/* Section 3: Schedule (Visible on Desktop OR when mobileStep === 3) */}
                         <div className={mobileStep === 3 ? 'block' : 'hidden lg:block'}>
-                            <Section id='booking-section-3' number='3' title='Schedule' description='Pick an available date and a guaranteed 2-hour window.' icon={<CalendarDays size={18} className='text-[#2F6B57]' />} disabled={!selectedService || !activePet?.name || !activePet?.breed || isPetTooYoung || isPetNotVaccinated || (aiEnabled && !selectedStyle)}>
+                            <Section id='booking-section-3' number='3' title='Schedule' description='Pick an available date and a guaranteed 2-hour window.' icon={<CalendarDays size={18} className='text-[#C25E2B]' />} disabled={!selectedService || !activePet?.name || !activePet?.breed || isPetTooYoung || isPetNotVaccinated || (aiEnabled && !selectedStyle)}>
                                 <div className='grid gap-5 xl:grid-cols-[1fr_1fr]'>
                                     <AvailabilityCalendar
                                         monthKey={monthKey}
@@ -1459,24 +1429,24 @@ export default function Booking() {
                                         loading={calendarLoading}
                                     />
                                     <div>
-                                        <h3 className='mb-3 font-serif text-lg font-bold text-[#13231B]'>{selectedDate ? formatDateLong(selectedDate) : 'Available Time Slots'}</h3>
+                                        <h3 className='mb-3 font-serif text-lg font-bold text-[#261C14]'>{selectedDate ? formatDateLong(selectedDate) : 'Available Time Slots'}</h3>
                                         <TimeSlotGrid slots={slots} selectedTime={selectedTime} onSelect={setSelectedTime} loading={slotsLoading} />
                                     </div>
                                 </div>
 
-                                <div className='my-6 h-px bg-[#E5EAE6]' />
+                                <div className='my-6 h-px bg-[#E2D9C8]' />
                                 <label className='block'>
                                     <Label>Notes for Groomer (Optional)</Label>
-                                    <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} maxLength={500} placeholder='Special handling, skin sensitivities, coat preferences, etc.' className='w-full rounded-lg border border-[#DDE4DE] bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#2F6B57]' />
+                                    <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} maxLength={500} placeholder='Special handling, skin sensitivities, coat preferences, etc.' className='w-full rounded-lg border border-[#E2D9C8] bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#C25E2B]' />
                                 </label>
-                                <p className='mt-1 text-right text-[11px] font-medium text-[#2F6B57]'>{notes.length}/500</p>
+                                <p className='mt-1 text-right text-[11px] font-medium text-[#8C7A6D]'>{notes.length}/500</p>
 
                                 {/* Step 3 Mobile Controls */}
-                                <div className='mt-4 pt-3 border-t border-[#DDE4DE] flex items-center justify-between lg:hidden'>
+                                <div className='mt-4 pt-3 border-t border-[#E2D9C8] flex items-center justify-between lg:hidden'>
                                     <button
                                         type='button'
                                         onClick={() => { setMobileStep(aiEnabled ? 2 : 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                                        className='inline-flex items-center gap-1 rounded-lg border border-[#DDE4DE] bg-white px-3 py-1.5 text-xs font-bold text-[#405148]'
+                                        className='inline-flex items-center gap-1 rounded-lg border border-[#E2D9C8] bg-white px-3 py-1.5 text-xs font-bold text-[#68594E]'
                                     >
                                         <ChevronLeft size={14} />
                                         <span>Back</span>
@@ -1487,16 +1457,16 @@ export default function Booking() {
 
                         {/* Step 4 Mobile Final Summary View (Visible ONLY on mobileStep === 4) */}
                         {mobileStep === 4 && (
-                            <div className='block lg:hidden rounded-xl border border-[#DDE4DE] bg-white p-6 shadow-xs space-y-6'>
-                                <div className='flex items-center gap-2.5 border-b border-[#DDE4DE] pb-4'>
-                                    <span className='grid h-8 w-8 place-items-center rounded-lg bg-[#13231B] font-mono text-xs font-bold text-[#F6F7F2]'>4</span>
+                            <div className='block lg:hidden rounded-xl border border-[#E2D9C8] bg-white p-6 shadow-xs space-y-6'>
+                                <div className='flex items-center gap-2.5 border-b border-[#E2D9C8] pb-4'>
+                                    <span className='grid h-8 w-8 place-items-center rounded-lg bg-[#2B4C3F] font-mono text-xs font-bold text-white'>4</span>
                                     <div>
-                                        <p className='text-[10px] font-bold uppercase tracking-wider text-[#2F6B57]'>Review &amp; Confirm</p>
-                                        <h2 className='font-serif text-xl font-bold text-[#13231B]'>Appointment Summary</h2>
+                                        <p className='text-[10px] font-bold uppercase tracking-wider text-[#C25E2B]'>Review &amp; Confirm</p>
+                                        <h2 className='font-serif text-xl font-bold text-[#261C14]'>Appointment Summary</h2>
                                     </div>
                                 </div>
 
-                                <div className='space-y-1.5 rounded-xl border border-[#DDE4DE] bg-white p-4'>
+                                <div className='space-y-1.5 rounded-xl border border-[#E2D9C8] bg-[#FAF7F2] p-4'>
                                     <SummaryRow label='Pet' value={activePet?.name || 'Not selected'} />
                                     <SummaryRow label='Breed' value={activePet?.breed || 'Not selected'} />
                                     <SummaryRow label='Service' value={selectedService?.name || 'Not selected'} />
@@ -1508,11 +1478,11 @@ export default function Booking() {
                                 </div>
 
                                 {/* Arrival Notice */}
-                                <div className='rounded-2xl border border-[#F0DEB6] bg-[#FFF4DC] p-4 text-xs text-[#6E4A0D] flex items-start gap-3 shadow-xs'>
-                                    <Clock className='mt-0.5 h-4 w-4 shrink-0 text-[#13231B]' />
+                                <div className='rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-950 flex items-start gap-3 shadow-xs'>
+                                    <Clock className='mt-0.5 h-4 w-4 shrink-0 text-amber-700' />
                                     <div>
-                                        <p className='font-bold text-[#13231B] mb-0.5'>Salon Arrival Policy:</p>
-                                        <p className='leading-relaxed text-[#13231B]/90'>Please arrive <strong>5–10 minutes before</strong> your appointment time. Late arrival beyond 10 minutes will automatically cancel your booking.</p>
+                                        <p className='font-bold text-amber-900 mb-0.5'>Salon Arrival Policy:</p>
+                                        <p className='leading-relaxed text-amber-900/90'>Please arrive <strong>5–10 minutes before</strong> your appointment time. Late arrival beyond 10 minutes will automatically cancel your booking.</p>
                                     </div>
                                 </div>
 
@@ -1520,7 +1490,7 @@ export default function Booking() {
                                     <button
                                         type='button'
                                         onClick={() => { setMobileStep(3); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                                        className='inline-flex items-center gap-1.5 rounded-xl border border-[#DDE4DE] bg-white px-4 py-3 text-xs font-bold text-[#405148]'
+                                        className='inline-flex items-center gap-1.5 rounded-xl border border-[#E2D9C8] bg-white px-4 py-3 text-xs font-bold text-[#68594E]'
                                     >
                                         <ChevronLeft size={16} />
                                         <span>Back to Schedule</span>
@@ -1528,7 +1498,7 @@ export default function Booking() {
                                     <button
                                         onClick={submitBooking}
                                         disabled={submitting}
-                                        className='inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2F6B57] px-6 py-3 font-bold text-[#F6F7F2] shadow-xs transition hover:bg-[#1F4D3E] active:scale-[0.98] disabled:opacity-50'
+                                        className='inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#C25E2B] px-6 py-3 font-bold text-white shadow-xs transition hover:bg-[#A84E20] active:scale-[0.98] disabled:opacity-50'
                                     >
                                         <span>{submitting ? 'Saving...' : 'Confirm Booking'}</span>
                                     </button>
@@ -1538,10 +1508,10 @@ export default function Booking() {
                     </div>
 
                     {/* Desktop Booking Summary Sidebar (Visible ONLY on Desktop lg:block) */}
-                    <aside className='sticky top-24 hidden rounded-[1.5rem] border border-[#DDE4DE] bg-white p-6 shadow-sm lg:block'>
+                    <aside className='sticky top-24 hidden rounded-xl border border-[#E2D9C8] bg-white p-6 shadow-xs lg:block'>
                         <div className='flex items-center gap-2.5'>
-                            <span className='grid h-7 w-7 place-items-center rounded-lg bg-[#13231B] font-mono text-xs font-bold text-[#F6F7F2]'>4</span>
-                            <div><p className='text-[10px] font-bold uppercase tracking-wider text-[#2F6B57]'>Review</p><h2 className='font-serif text-xl font-bold text-[#13231B]'>Booking Summary</h2></div>
+                            <span className='grid h-7 w-7 place-items-center rounded-lg bg-[#2B4C3F] font-mono text-xs font-bold text-white'>4</span>
+                            <div><p className='text-[10px] font-bold uppercase tracking-wider text-[#C25E2B]'>Review</p><h2 className='font-serif text-xl font-bold text-[#261C14]'>Booking Summary</h2></div>
                         </div>
                         <div className='mt-5 space-y-1'>
                             <SummaryRow label='Pet' value={activePet?.name || 'Not selected'} />
@@ -1552,9 +1522,9 @@ export default function Booking() {
                             <SummaryRow label='Date' value={selectedDate ? formatDateLong(selectedDate) : 'Not selected'} />
                             <SummaryRow label='Time' value={selectedSlot ? formatTimeRange(selectedSlot.startTime, selectedSlot.endTime) : 'Not selected'} />
                         </div>
-                        <div className='my-5 h-px bg-[#E5EAE6]' />
-                        <div className='flex items-end justify-between'><span className='font-serif text-lg font-bold text-[#13231B]'>Total Amount</span><span className='font-serif text-2xl font-bold text-[#2F6B57]'>₱{Number(selectedService?.price || 0).toLocaleString('en-PH')}</span></div>
-                        <button onClick={submitBooking} disabled={submitting} className='mt-6 hidden w-full rounded-lg bg-[#2F6B57] px-5 py-3.5 font-bold text-[#F6F7F2] shadow-xs transition hover:bg-[#1F4D3E] disabled:opacity-50 lg:block'>{submitting ? 'Saving appointment...' : 'Confirm Booking'}</button>
+                        <div className='my-5 h-px bg-[#E2D9C8]' />
+                        <div className='flex items-end justify-between'><span className='font-serif text-lg font-bold text-[#261C14]'>Total Amount</span><span className='font-serif text-2xl font-bold text-[#C25E2B]'>₱{Number(selectedService?.price || 0).toLocaleString('en-PH')}</span></div>
+                        <button onClick={submitBooking} disabled={submitting} className='mt-6 hidden w-full rounded-lg bg-[#C25E2B] px-5 py-3.5 font-bold text-white shadow-xs transition hover:bg-[#A84E20] disabled:opacity-50 lg:block'>{submitting ? 'Saving appointment...' : 'Confirm Booking'}</button>
                     </aside>
                 </div>
             </div>
@@ -1562,12 +1532,12 @@ export default function Booking() {
             {/* Mobile Floating Sticky Summary Bar (Visible only on steps 1..3) */}
             {mobileStep < 4 && (
                 <div className='fixed bottom-16 left-0 right-0 z-30 px-3 pb-2 pt-1 lg:hidden pointer-events-none'>
-                    <div className='pointer-events-auto mx-auto flex max-w-lg items-center justify-between gap-3 rounded-xl border border-[#DDE4DE] bg-white/95 px-4 py-2.5 shadow-lg backdrop-blur-md'>
+                    <div className='pointer-events-auto mx-auto flex max-w-lg items-center justify-between gap-3 rounded-xl border border-[#E2D9C8] bg-white/98 px-4 py-2.5 shadow-lg backdrop-blur-md'>
                         <div className='min-w-0 flex-1'>
-                            <p className='text-[10px] font-bold uppercase tracking-wider text-[#2F6B57] truncate'>
+                            <p className='text-[10px] font-bold uppercase tracking-wider text-[#C25E2B] truncate'>
                                 {selectedService?.name || 'Grooming'} {selectedStyle ? `• ${selectedStyle.name}` : ''}
                             </p>
-                            <p className='font-serif text-base font-bold text-[#13231B] leading-tight'>
+                            <p className='font-serif text-base font-bold text-[#261C14] leading-tight'>
                                 ₱{Number(selectedService?.price || 0).toLocaleString('en-PH')}
                             </p>
                         </div>
@@ -1584,7 +1554,7 @@ export default function Booking() {
                                     window.scrollTo({ top: 0, behavior: 'smooth' })
                                 }
                             }}
-                            className='inline-flex items-center justify-center gap-1 rounded-lg bg-[#2F6B57] px-4 py-2 text-xs font-bold text-[#F6F7F2] shadow-xs transition hover:bg-[#1F4D3E] active:scale-[0.98] shrink-0'
+                            className='inline-flex items-center justify-center gap-1 rounded-lg bg-[#C25E2B] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#A84E20] active:scale-[0.98] shrink-0'
                         >
                             <span>Next Step</span>
                             <ChevronRight size={14} />
@@ -1598,10 +1568,10 @@ export default function Booking() {
 
 function Section({ id, number, title, description, icon, disabled = false, children }) {
     return (
-        <section id={id} className={`rounded-[1.5rem] border border-[#DDE4DE] bg-white p-5 shadow-sm transition-all duration-300 sm:p-6 ${disabled ? 'pointer-events-none opacity-45' : ''}`}>
+        <section id={id} className={`rounded-xl border border-[#E2D9C8] bg-white p-5 shadow-xs transition-all duration-300 sm:p-6 ${disabled ? 'pointer-events-none opacity-45' : ''}`}>
             <div className='mb-5 flex items-start gap-3.5'>
-                <span className='grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#F6F7F2] border border-[#F6F7F2] font-mono text-xs font-bold text-[#2F6B57]'>{number}</span>
-                <div className='flex-1'><div className='flex items-center gap-2'>{icon}<h2 className='font-serif text-xl font-bold text-[#13231B]'>{title}</h2></div><p className='mt-1 text-xs leading-relaxed text-[#405148]'>{description}</p></div>
+                <span className='grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#FAF7F2] border border-[#E2D9C8] font-mono text-xs font-bold text-[#C25E2B]'>{number}</span>
+                <div className='flex-1'><div className='flex items-center gap-2'>{icon}<h2 className='font-serif text-xl font-bold text-[#261C14]'>{title}</h2></div><p className='mt-1 text-xs leading-relaxed text-[#68594E]'>{description}</p></div>
             </div>
             {children}
         </section>
@@ -1609,18 +1579,18 @@ function Section({ id, number, title, description, icon, disabled = false, child
 }
 
 function Label({ children }) {
-    return <span className='mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#405148]'>{children}</span>
+    return <span className='mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#68594E]'>{children}</span>
 }
 
 function Input({ label, value, onChange, ...props }) {
-    return <label className='block'><Label>{label}</Label><input value={value} onChange={(event) => onChange(event.target.value)} className='h-11 w-full rounded-lg border border-[#DDE4DE] bg-white px-3.5 text-sm outline-none transition focus:border-[#2F6B57] placeholder:text-[#E8795B]' {...props} /></label>
+    return <label className='block'><Label>{label}</Label><input value={value} onChange={(event) => onChange(event.target.value)} className='h-11 w-full rounded-lg border border-[#E2D9C8] bg-white px-3.5 text-sm outline-none transition focus:border-[#C25E2B] placeholder:text-[#A8988A]' {...props} /></label>
 }
 
 function SummaryRow({ label, value, strong = false }) {
     return (
-        <div className='flex items-start justify-between gap-4 border-b border-[#E5EAE6] py-2.5 last:border-0'>
-            <span className='text-xs font-medium text-[#68776F]'>{label}</span>
-            <span className={`text-right text-xs ${strong ? 'font-serif text-base font-bold text-[#1F4D3E]' : 'font-bold text-[#13231B]'}`}>{value}</span>
+        <div className='flex items-start justify-between gap-4 border-b border-[#E2D9C8] py-2.5 last:border-0'>
+            <span className='text-xs text-[#68594E]'>{label}</span>
+            <span className={`text-right text-xs ${strong ? 'font-bold text-[#C25E2B]' : 'font-semibold text-[#261C14]'}`}>{value}</span>
         </div>
     )
 }
