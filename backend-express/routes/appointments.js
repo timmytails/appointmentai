@@ -6,6 +6,12 @@ const Appointment = require('../models/Appointment')
 const AiPreview = require('../models/AiPreview')
 const Notification = require('../models/Notification')
 const Pet = require('../models/Pet')
+const User = require('../models/User')
+const {
+    sendAppointmentCancelledEmail,
+    sendAppointmentConfirmedEmail,
+    sendAppointmentRescheduledEmail
+} = require('../services/mailer')
 const { protect } = require('../middleware/auth')
 const {
     SERVICES,
@@ -409,6 +415,19 @@ const autoCancelOverdueAppointments = async () => {
                     targetUser: appointment.user,
                     type: 'appointment-status',
                     appointment: appointment._id
+                }).catch(() => {})
+
+                // Send cancellation email for auto-cancelled appointment
+                User.findById(appointment.user).select('email firstName').then((u) => {
+                    const email = u?.email || appointment.contactEmail
+                    if (email) {
+                        sendAppointmentCancelledEmail({
+                            to: email,
+                            name: u?.firstName,
+                            appointment,
+                            reason: autoCancelReason
+                        }).catch((err) => console.error('Auto-cancel email dispatch error:', err.message))
+                    }
                 }).catch(() => {})
             }
         }
@@ -933,38 +952,18 @@ router.post(
             .optional()
     ],
     async (req, res) => {
-        // Bulletproof Account Enforcement Check: Query DB for fresh User & recent enforcement notifications
-        const freshUser = await User.findById(req.user._id).select('accountStatus statusReason warningMessage')
-        const lastNotif = await Notification.findOne({ audience: 'user', targetUser: req.user._id }).sort({ createdAt: -1 })
-
-        let isBlockedOrBanned = false
-        let reasonMsg = ''
-
-        if (freshUser && ['booking_blocked', 'banned'].includes(freshUser.accountStatus)) {
-            isBlockedOrBanned = true
-            reasonMsg = freshUser.accountStatus === 'banned'
-                ? 'Your customer account has been permanently suspended by salon administration.'
-                : `Your booking access is currently blocked by salon administration. ${freshUser.statusReason || ''}`
-        }
-
-        if (!isBlockedOrBanned && lastNotif) {
-            const title = String(lastNotif.title || '').toLowerCase()
-            if (title.includes('banned') || title.includes('suspended') || title.includes('blocked')) {
-                isBlockedOrBanned = true
-                reasonMsg = `Your booking access is currently blocked by salon administration. ${lastNotif.message || ''}`
-
-                if (freshUser) {
-                    freshUser.accountStatus = title.includes('banned') ? 'banned' : 'booking_blocked'
-                    freshUser.statusReason = lastNotif.message || ''
-                    await freshUser.save()
-                }
-            }
-        }
+        // Enforce the persisted account status. Notifications are communication only.
+        const freshUser = await User.findById(req.user._id).select('accountStatus statusReason')
+        const isBlockedOrBanned = freshUser && ['booking_blocked', 'banned'].includes(freshUser.accountStatus)
 
         if (isBlockedOrBanned) {
+            const reasonMsg = freshUser.accountStatus === 'banned'
+                ? `Your customer account has been permanently suspended by administration. ${freshUser.statusReason || ''}`
+                : `Your booking access is currently blocked by administration. ${freshUser.statusReason || ''}`
+
             return res.status(403).json({
                 success: false,
-                message: reasonMsg
+                message: reasonMsg.trim()
             })
         }
 
@@ -1242,11 +1241,16 @@ router.post(
                         '+generatedImage +sourcePhotoHash'
                     )
 
+                const acceptedPreviewPolicies = [
+                    SOURCE_PHOTO_POLICY_VERSION,
+                    'breed-species-v5-strict-check',
+                    'species-v4-neutral-context-bound'
+                ]
+
                 if (
                     !previewRecord ||
                     previewRecord.expiresAt <= new Date() ||
-                    previewRecord.sourceVerificationPolicyVersion !==
-                        SOURCE_PHOTO_POLICY_VERSION
+                    !acceptedPreviewPolicies.includes(previewRecord.sourceVerificationPolicyVersion)
                 ) {
                     return res
                         .status(400)
@@ -1519,6 +1523,18 @@ router.post(
             delete appointmentResponse.aiPreviewSourceHash
             delete appointmentResponse.aiPreviewFidelityCheck
 
+            // Send Booking Confirmation Email
+            const customerEmail = appointment.ownerEmail || req.user?.email
+            if (customerEmail) {
+                sendAppointmentConfirmedEmail({
+                    to: customerEmail,
+                    name: req.body.ownerName || req.user?.firstName,
+                    appointment
+                }).catch((emailErr) => {
+                    console.error('Booking confirmation email dispatch error:', emailErr.message)
+                })
+            }
+
             return res
                 .status(201)
                 .json({
@@ -1702,6 +1718,24 @@ router.delete(
                         : null
             })
 
+            // Send cancellation email to customer
+            try {
+                const targetUser = await User.findById(appointment.user).select('email firstName')
+                const customerEmail = targetUser?.email || appointment.contactEmail
+                if (customerEmail) {
+                    sendAppointmentCancelledEmail({
+                        to: customerEmail,
+                        name: targetUser?.firstName,
+                        appointment,
+                        reason: appointment.cancellationReason
+                    }).catch((emailErr) => {
+                        console.error('Cancellation email dispatch error:', emailErr.message)
+                    })
+                }
+            } catch (err) {
+                console.error('Error finding user for cancellation email:', err.message)
+            }
+
             return res.json({
                 success: true,
                 message:
@@ -1825,6 +1859,18 @@ router.patch(
                 appointment: appointment._id,
                 createdBy: isAdmin ? req.user._id : null
             })
+
+            // Send Reschedule Notification Email
+            const rescheduleEmail = appointment.ownerEmail || req.user?.email
+            if (rescheduleEmail) {
+                sendAppointmentRescheduledEmail({
+                    to: rescheduleEmail,
+                    name: appointment.ownerName || req.user?.firstName,
+                    appointment
+                }).catch((emailErr) => {
+                    console.error('Reschedule email dispatch error:', emailErr.message)
+                })
+            }
 
             return res.json({
                 success: true,

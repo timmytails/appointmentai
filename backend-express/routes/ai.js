@@ -696,10 +696,15 @@ const readPhotoVerificationToken = ({
         return null
     }
 
+    const acceptedPolicies = [
+        SOURCE_PHOTO_POLICY_VERSION,
+        'breed-species-v5-strict-check',
+        'species-v4-neutral-context-bound'
+    ]
+
     const valid = Boolean(
         tokenData.version === 3 &&
-        tokenData.policyVersion ===
-            SOURCE_PHOTO_POLICY_VERSION &&
+        acceptedPolicies.includes(tokenData.policyVersion) &&
         tokenData.sourcePhotoHash === imageData.sha256 &&
         tokenData.petType === petType &&
         tokenData.userId === String(userId) &&

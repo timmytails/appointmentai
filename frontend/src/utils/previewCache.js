@@ -2,7 +2,7 @@ const DB_NAME = 'timmytails-ai-preview-cache'
 const DB_VERSION = 1
 const STORE_NAME = 'previews'
 export const SOURCE_PHOTO_POLICY_VERSION =
-    'species-v4-neutral-context-bound'
+    'breed-species-v5-strict-check'
 
 const CACHE_VERSION = 'v7-fast-species-guard-cache'
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000
