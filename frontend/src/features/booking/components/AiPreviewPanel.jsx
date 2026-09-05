@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-    AlertCircle,
     CheckCircle2,
     CloudRain,
     Image as ImageIcon,
@@ -23,8 +22,6 @@ export default function AiPreviewPanel({
     consent,
     onConsentChange,
     verificationStatus,
-    verificationError = '',
-    onStartGeneration,
     galleryGenerating,
     galleryMessage,
     hasFailures,
@@ -110,56 +107,29 @@ export default function AiPreviewPanel({
                             <li>• Use bright, even lighting without heavy blur.</li>
                         </ul>
 
-                        <label className='mt-3 flex items-start gap-2.5 rounded-lg bg-[#F6F7F2] p-3 text-xs text-[#405148] cursor-pointer'>
+                        <label className='mt-3 flex items-start gap-2.5 rounded-lg bg-[#F6F7F2] p-3 text-xs text-[#405148]'>
                             <input
                                 type='checkbox'
                                 checked={consent}
                                 onChange={(event) => onConsentChange(event.target.checked)}
-                                className='mt-0.5 h-4 w-4 accent-[#2F6B57] cursor-pointer'
+                                className='mt-0.5 h-4 w-4 accent-[#2F6B57]'
                             />
                             <span>I agree to securely process this photo for personalized grooming previews.</span>
                         </label>
 
-                        {/* Action Button */}
-                        {verificationStatus !== 'verified' && (
-                            <button
-                                type='button'
-                                onClick={onStartGeneration}
-                                disabled={!photoPreview || !consent || verificationStatus === 'checking' || galleryGenerating}
-                                className='mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2F6B57] font-bold text-white shadow-xs transition hover:bg-[#235343] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50'
-                            >
-                                {verificationStatus === 'checking' ? (
-                                    <>
-                                        <Loader2 size={16} className='animate-spin' />
-                                        <span>Checking Pet Photo…</span>
-                                    </>
-                                ) : verificationStatus === 'error' ? (
-                                    <>
-                                        <RefreshCw size={16} />
-                                        <span>Retry Photo Verification</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <WandSparkles size={16} />
-                                        <span>Verify &amp; Generate Previews</span>
-                                    </>
-                                )}
-                            </button>
-                        )}
-
-                        <div className={`mt-2.5 min-h-10 rounded-lg border px-3 py-2 text-xs transition ${verificationStatus === 'error' ? 'border-[#F0CCCC] bg-[#FBEAEA]' : verificationStatus === 'verified' ? 'border-[#D4E8DC] bg-[#F0F8F3]' : 'border-[#F6F7F2]'}`} aria-live='polite'>
+                        <div className='mt-2.5 min-h-10 rounded-lg border border-[#F6F7F2] px-3 py-2 text-xs' aria-live='polite'>
                             {verificationStatus === 'checking' ? (
-                                <span className='flex items-center gap-2 text-[#1F4D3E]' role='status'><Loader2 size={14} className='animate-spin' />Checking your pet photo with AI…</span>
+                                <span className='flex items-center gap-2 text-[#1F4D3E]' role='status'><Loader2 size={14} className='animate-spin' />Checking your pet photo once…</span>
                             ) : verificationStatus === 'verified' ? (
-                                <span className='flex items-center gap-2 font-semibold text-[#1F4D3E]'><CheckCircle2 size={15} className='text-[#2F6B57]' />Photo verified successfully for all styles.</span>
+                                <span className='flex items-center gap-2 font-semibold text-[#13231B]'><CheckCircle2 size={14} />Photo verified for all styles.</span>
                             ) : verificationStatus === 'error' ? (
-                                <span className='flex items-start gap-2 font-medium text-[#9E3E3E]'><AlertCircle size={15} className='mt-0.5 shrink-0' /><span>{verificationError || 'Photo verification failed. Replace the photo or try again.'}</span></span>
-                            ) : !photoPreview ? (
-                                <span className='text-[#6A7B72]'>Upload a pet photo to begin.</span>
-                            ) : !consent ? (
-                                <span className='text-[#2F6B57]'>Accept photo processing consent above to continue.</span>
+                                <span className='text-[#2F6B57]'>Photo verification failed. Replace the photo or try again.</span>
+                            ) : photoPreview && !consent ? (
+                                <span className='text-[#2F6B57]'>Check the box above to enable haircut previews.</span>
+                            ) : photoPreview && consent ? (
+                                <span className='text-[#1F4D3E] font-medium'>Ready! Click any haircut card below to preview it on your pet.</span>
                             ) : (
-                                <span className='text-[#2F6B57]'>Click &quot;Verify &amp; Generate Previews&quot; to check photo and start styles.</span>
+                                <span className='text-[#2F6B57]'>Upload a pet photo and agree to processing to begin.</span>
                             )}
                         </div>
                     </div>

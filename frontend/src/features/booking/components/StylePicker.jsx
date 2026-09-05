@@ -122,6 +122,7 @@ export default function StylePicker({
                         const preview = stylePreviews[style.id] || { status: 'idle' }
                         const ready = preview.status === 'ready' && preview.generatedImage
                         const failed = preview.status === 'error'
+                        const canGenerate = photoReady && preview.status === 'idle' && !generationBusy
                         const rawSuitability = style.breedSuitability || (Array.isArray(style.suitableBreeds) ? style.suitableBreeds.join(', ') : '')
                         const cleanSuitability = String(rawSuitability || '')
                             .replace(/^(Good for|Recommended for|Popular for|Ideal for|Perfect for)\s*/i, '')
@@ -317,7 +318,7 @@ export default function StylePicker({
                     {renderStyleGroup({
                         title: `Recommended for ${currentSeasonLabel}`,
                         badge: 'Current season',
-                        description: `Best suited for coat comfort, ventilation, and easy grooming during the Philippine ${currentSeasonLabel.toLowerCase()}. The top suggestion generates first.`,
+                        description: `Best suited for coat comfort, ventilation, and easy grooming during the Philippine ${currentSeasonLabel.toLowerCase()}. Select any card to preview.`,
                         groupStyles: recommendedStyles,
                         recommended: true
                     })}

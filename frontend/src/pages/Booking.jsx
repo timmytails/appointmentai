@@ -715,15 +715,24 @@ export default function Booking() {
 
         if (!targetStyles.length) return
 
-        galleryBusyRef.current = true
+        const isManualSelection = Boolean(onlyStyleIds)
         const runId = galleryRunIdRef.current + 1
         galleryRunIdRef.current = runId
-        setGalleryGenerating(true)
-        setGalleryMessage(
-            'Loading saved style examples…'
-        )
 
-        if (!onlyStyleIds) {
+        if (isManualSelection) {
+            galleryBusyRef.current = true
+            setGalleryGenerating(true)
+            setGalleryMessage('Creating your selected style…')
+            setStylePreviews((current) => ({
+                ...current,
+                ...Object.fromEntries(
+                    targetStyles.map((style) => [
+                        style.id,
+                        { status: 'queued' }
+                    ])
+                )
+            }))
+        } else {
             setSelectedStyleId('')
             setGeneratedPreview('')
             setGeneratedPreviewMeta(null)
@@ -736,16 +745,6 @@ export default function Booking() {
                     ])
                 )
             )
-        } else {
-            setStylePreviews((current) => ({
-                ...current,
-                ...Object.fromEntries(
-                    targetStyles.map((style) => [
-                        style.id,
-                        { status: 'queued' }
-                    ])
-                )
-            }))
         }
 
         try {
@@ -760,10 +759,8 @@ export default function Booking() {
 
             if (galleryRunIdRef.current !== runId) return
 
-            const stylesToGenerate = []
-
             cachedResults.forEach(({ style, cached }) => {
-                if (cached?.generatedImage && !onlyStyleIds) {
+                if (cached?.generatedImage) {
                     setStylePreviewForRun(
                         runId,
                         style.id,
@@ -774,22 +771,23 @@ export default function Booking() {
                             error: ''
                         }
                     )
-                } else {
-                    stylesToGenerate.push(style)
                 }
             })
 
-            const stylesForRun =
-                getAutomaticPreviewStyles({
-                    stylesToGenerate,
-                    recommendations,
-                    manualRequest:
-                        Boolean(onlyStyleIds)
-                })
+            // On initial consent/upload, only restore cached previews if any.
+            // Do NOT automatically generate any new previews until the user clicks a card.
+            if (!isManualSelection) {
+                return
+            }
+
+            const stylesForRun = targetStyles.filter((style) => {
+                const isCached = cachedResults.some(
+                    (r) => r.style.id === style.id && r.cached?.generatedImage
+                )
+                return !isCached
+            })
 
             if (!stylesForRun.length) {
-                setVerificationStatus('verified')
-                setGalleryMessage('')
                 return
             }
 
