@@ -1411,6 +1411,7 @@ export default function Booking() {
                                             onRetry={retryStylePreview}
                                             petType={activePet?.type}
                                             breed={activePet?.breed}
+                                            season={season}
                                             photoReady={Boolean(photoDataUrl && consent)}
                                             loading={stylesLoading || recommendationsLoading}
                                             generationBusy={galleryGenerating}

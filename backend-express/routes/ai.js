@@ -1366,13 +1366,22 @@ router.post(
         }
 
         try {
-            const petContext =
-                await resolvePetContext(req)
+            let petType = 'dog'
+            let coatType = ''
+            try {
+                const petContext = await resolvePetContext(req)
+                petType = petContext.petType || 'dog'
+                coatType = petContext.coatType || ''
+            } catch (_err) {
+                petType = normalizePetType(req.body.petType) || 'dog'
+                coatType = String(req.body.coatType || '').trim()
+            }
+
             const season = getPhilippineSeason()
             const recommendations =
                 getStyleRecommendations({
-                    petType: petContext.petType,
-                    coatType: petContext.coatType,
+                    petType,
+                    coatType,
                     season: season.key
                 })
 
